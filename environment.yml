@@ -18,3 +18,4 @@ dependencies:
   - tensorboard=1.15.0
   - pip:
     - pytorch-lightning==0.7.1
+    - subword-nmt==0.3.7
