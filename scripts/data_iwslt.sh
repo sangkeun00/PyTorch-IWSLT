@@ -1,4 +1,8 @@
 #!/bin/bash
+if ! [ -x "$(command -v subword-nmt)" ]; then
+  echo 'Error: subword-nmt is not installed. Perhaps conda environment is not activate?' >&2
+  exit 1
+fi
 if [ ! -f ./scripts/gdrive.sh ]; then
   wget https://raw.githubusercontent.com/GitHub30/gdrive.sh/master/gdrive.sh -O ./scripts/gdrive.sh
   chmod +x ./scripts/gdrive.sh
