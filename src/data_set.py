@@ -1,5 +1,7 @@
 import os
 from collections import Counter
+from collections.abc import Iterable
+from collections.abc import Mapping
 
 import numpy as np
 import torch
@@ -188,14 +190,19 @@ def load_sents(path):
             yield sent
 
 
-def to_device(iterator, device):
-    for seq in iterator:
-        if isinstance(seq, list):
-            yield [x.to(device, non_blocking=True) for x in seq]
-        elif isinstance(seq, torch.Tensor):
-            yield seq.to(device, non_blocking=True)
-        else:
-            raise NotImplementedError()
+def to_device(tensor, device):
+    if isinstance(tensor, torch.Tensor):
+        return tensor.to(device, non_blocking=True)
+    if isinstance(tensor, Mapping):
+        return {key: to_device(value, device) for key, value in tensor.items()}
+    if isinstance(tensor, Iterable):
+        return [to_device(x, device) for x in tensor]
+    raise NotImplementedError()
+
+
+def yield_to_device(generator, device):
+    for x in generator:
+        yield to_device(x, device)
 
 
 def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
