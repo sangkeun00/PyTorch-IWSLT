@@ -113,7 +113,7 @@ class MultiHeadAttention(nn.Module):
 
         # qkv: (B, H, T, C//H) -> attn: (B, H, T, T), out: (B, H, T, C//H)
         attn = torch.matmul(q, k.transpose(2, 3))
-        attn = attn.masked_fill_(mask.unsqueeze(1), -1e9)
+        attn = attn.masked_fill_(mask[:, None, None, :], -1e9)
         attn = F.softmax(attn, dim=-1)
         attn = self.attn_dropout(attn)
         out = torch.matmul(attn, v)

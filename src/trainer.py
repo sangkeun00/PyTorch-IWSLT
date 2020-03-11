@@ -12,39 +12,24 @@ class Seq2SegModel(pl.LightningModule):
         self.args = args
         self.learning_rate = args.learning_rate
         self.data_splits = data_splits
-        self.encoder = models.transformer.TransformerEncoder(
-            enc_embed_dim=args.enc_embed_dim,
-            enc_ffn_dim=args.enc_ffn_dim,
-            enc_num_heads=args.enc_num_heads,
-            enc_num_layers=args.enc_num_layers,
+        self.model = models.transformer.Transformer(
+            args,
             src_dict=data_splits.vocab_src,
-            enc_layernorm_before=args.enc_layernorm_before,
-            attn_dropout=args.attn_dropout,
-            act_dropout=args.act_dropout,
-            embed_dropout=args.embed_dropout,
-            dropout=args.dropout)
-        self.decoder = models.transformer.TransformerDecoder(
-            dec_embed_dim=args.dec_embed_dim,
-            dec_ffn_dim=args.dec_ffn_dim,
-            dec_num_heads=args.dec_num_heads,
-            dec_num_layers=args.dec_num_layers,
-            tgt_dict=data_splits.vocab_tgt,
-            dec_layernorm_before=args.enc_layernorm_before,
-            attn_dropout=args.attn_dropout,
-            act_dropout=args.act_dropout,
-            embed_dropout=args.embed_dropout,
-            dropout=args.dropout)
+            tgt_dict=data_splits.vocab_tgt)
 
-    def forward(self, x):
-        pass
+    def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
+        return self.model(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
 
     def training_step(self, batch, batch_nb):
-        pass
+        src_tokens, src_lengths, tgt_tokens, tgt_lengths = batch
+        out = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
+        # TODO: we need to use actuall loss!
+        loss = out.sum()
+        return {'loss': loss}
 
     def configure_optimizers(self):
         # TODO: just test! should move enc & dec to the same net!
-        opt = torch.optim.Adam(self.encoder.parameters(),
-                               lr=self.learning_rate)
+        opt = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
         sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10)
         return [opt], [sch]
 

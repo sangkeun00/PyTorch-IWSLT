@@ -1,8 +1,11 @@
 import torch
 
 
-def positional_embedding(src_tokens):
-    pass
+def positional_embedding(src_tokens, embed_dim):
+    # TODO: implement actual positional encoding
+    size = src_tokens.size()
+    size = list(size + (embed_dim, ))
+    return torch.zeros(size, device=src_tokens.device)
 
 
 def create_mask(lengths, max_length=None):

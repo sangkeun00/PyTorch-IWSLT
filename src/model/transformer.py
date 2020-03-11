@@ -8,6 +8,41 @@ from .transformer_layer import EncoderLayer, DecoderLayer
 from .utils import create_mask, positional_embedding
 
 
+class Transformer(nn.Module):
+    def __init__(self, args, src_dict, tgt_dict):
+        super().__init__()
+        self.encoder = TransformerEncoder(
+            enc_embed_dim=args.enc_embed_dim,
+            enc_ffn_dim=args.enc_ffn_dim,
+            enc_num_heads=args.enc_num_heads,
+            enc_num_layers=args.enc_num_layers,
+            src_dict=src_dict,
+            enc_layernorm_before=args.enc_layernorm_before,
+            attn_dropout=args.attn_dropout,
+            act_dropout=args.act_dropout,
+            embed_dropout=args.embed_dropout,
+            dropout=args.dropout)
+
+        self.decoder = TransformerDecoder(
+            dec_embed_dim=args.dec_embed_dim,
+            dec_ffn_dim=args.dec_ffn_dim,
+            dec_num_heads=args.dec_num_heads,
+            dec_num_layers=args.dec_num_layers,
+            tgt_dict=tgt_dict,
+            dec_layernorm_before=args.enc_layernorm_before,
+            attn_dropout=args.attn_dropout,
+            act_dropout=args.act_dropout,
+            embed_dropout=args.embed_dropout,
+            dropout=args.dropout)
+
+    def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
+        encoder_out = self.encoder(src_tokens, src_lengths)
+        # TODO: pass encoder_out
+        decoder_out = self.decoder(tgt_tokens, tgt_lengths)
+        return decoder_out
+
+
+
 class TransformerEncoder(nn.Module):
     def __init__(
         self,
@@ -61,7 +96,7 @@ class TransformerEncoder(nn.Module):
         :param src_lengths: [B]
         """
         x = self.embedding(src_tokens) * self.embed_scale
-        x = x + positional_embedding(src_tokens)
+        x = x + positional_embedding(src_tokens, self.embed_dim)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         mask = create_mask(src_lengths, max_length=src_tokens.size()[-1])
@@ -122,9 +157,10 @@ class TransformerDecoder(nn.Module):
 
     def forward(self, tgt_tokens, tgt_lengths, cache=None):
         x = self.embedding(tgt_tokens) * self.embed_scale
-        x = x + positional_embedding(tgt_tokens)
+        x = x + positional_embedding(tgt_tokens, self.embed_dim)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         mask = create_mask(tgt_lengths, max_length=tgt_tokens.size()[-1])
 
         # TODO
+        return x
