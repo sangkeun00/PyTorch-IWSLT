@@ -8,7 +8,7 @@ def positional_embedding(src_tokens, embed_dim):
     return torch.zeros(size, device=src_tokens.device)
 
 
-def create_mask(lengths, max_length=None):
+def create_mask(lengths, max_length=None, causal=False):
     """create_mask
 
     :param lengths: [B]
@@ -19,4 +19,9 @@ def create_mask(lengths, max_length=None):
     if max_length is None:
         max_length = lengths.max()
     index = torch.arange(max_length, device=lengths.device)
-    return index[None, :] >= lengths[:, None]
+    padding_mask = index[None, :] >= lengths[:, None]
+    if causal:
+        causal_mask = index[:, None] < index[None, :]
+        return (causal_mask[None, :, :] | padding_mask[:, None, :])
+
+    return padding_mask[:, None, :]
