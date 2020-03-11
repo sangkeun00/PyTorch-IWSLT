@@ -160,7 +160,12 @@ class TransformerDecoder(nn.Module):
         x = x + positional_embedding(tgt_tokens, self.embed_dim)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_mask(tgt_lengths, max_length=tgt_tokens.size()[-1])
+        # TODO: add src_mask
+        # src_mask =
+        mask = create_mask(
+                tgt_lengths,
+                max_length=tgt_tokens.size()[-1],
+                causal=True)
 
         # TODO
         return x
