@@ -24,4 +24,6 @@ jobs:
           python-version: 3.6
       - name: Conda info
         shell: bash -l {0}
-        run: conda info
+        run: |
+          conda info
+          python -m unittest -v
