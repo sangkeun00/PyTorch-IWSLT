@@ -18,6 +18,7 @@ jobs:
       - uses: goanpeca/setup-miniconda@v1.0.2
         with:
           auto-activate-base: false
+          auto-update-conda: true
           environment-file:: 'environment.yml'
           activate-environment: nn4nlp-hw3
           python-version: 3.6
