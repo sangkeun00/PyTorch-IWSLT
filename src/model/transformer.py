@@ -55,11 +55,16 @@ class TransformerEncoder(nn.Module):
                         mean=0, std=1/self.embed_scale)
 
     def forward(self, src_tokens, src_lengths):
+        """forward
+
+        :param src_tokens: [B, T]
+        :param src_lengths: [B]
+        """
         x = self.embedding(src_tokens) * self.embed_scale
         x = x + positional_embedding(src_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_mask(src_lengths)
+        mask = create_mask(src_lengths, max_length=src_tokens.size()[-1])
 
         x = x.transpose(0, 1)
 
@@ -120,6 +125,6 @@ class TransformerDecoder(nn.Module):
         x = x + positional_embedding(tgt_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_mask(tgt_lengths)
+        mask = create_mask(tgt_lengths, max_length=tgt_tokens.size()[-1])
 
         # TODO
