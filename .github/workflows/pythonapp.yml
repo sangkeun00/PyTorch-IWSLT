@@ -14,11 +14,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: goanpeca/setup-miniconda@v1
+      - uses: actions/checkout@v2
+      - uses: goanpeca/setup-miniconda@v1.0.2
         with:
-          auto-update-conda: true
-          python-version: 3.6
+          auto-activate-base: false
           environment-file:: 'environment.yml'
+          activate-environment: nn4nlp-hw3
+          python-version: 3.6
       - name: Conda info
         shell: bash -l {0}
         run: conda info
