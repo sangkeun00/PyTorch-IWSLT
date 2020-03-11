@@ -48,8 +48,6 @@ class Seq2SegModel(pl.LightningModule):
         sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10)
         return [opt], [sch]
 
-        pass
-
     def train_dataloader(self):
         return data_set.get_dataloader(self.data_splits['trn'],
                                        batch_size=self.args.batch_size)
