@@ -43,7 +43,7 @@ class TransformerEncoder(nn.Module):
                 dropout=dropout,
                 layernorm_before=enc_layernorm_before,
             )
-            self.layer.append(layer)
+            self.layers.append(layer)
 
         # Final LayerNorm
         self.last_layernorm = nn.LayerNorm(enc_embed_dim, eps=1e-5)
@@ -82,7 +82,7 @@ class TransformerDecoder(nn.Module):
         dec_layernorm_before=False,
         attn_dropout=0.,
         act_dropout=0.,
-        embed_droput=0.,
+        embed_dropout=0.,
         dropout=0.,
     ):
         super().__init__()
@@ -92,7 +92,7 @@ class TransformerDecoder(nn.Module):
         # Embedding
         self.embed_scale = math.sqrt(dec_embed_dim)
         self.embedding = nn.Embedding(len(tgt_dict), dec_embed_dim)
-        self.embed_dropout = embed_droput
+        self.embed_dropout = embed_dropout
 
         # Decoder Layers
         self.layers = nn.ModuleList()

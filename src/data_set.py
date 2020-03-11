@@ -182,6 +182,9 @@ class Vocab(object):
                 tids = tids[:-1]
         return [self.get_token[tid] for tid in tids]
 
+    def __len__(self):
+        return len(self.tks)
+
 
 def load_sents(path):
     with open(path) as infile:

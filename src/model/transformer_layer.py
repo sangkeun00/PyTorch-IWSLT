@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from multihead_attention import MultiHeadAttention
+from .multihead_attention import MultiHeadAttention
 
 
 class EncoderLayer(nn.Module):
@@ -43,7 +43,7 @@ class EncoderLayer(nn.Module):
         nn.init.xavier_uniform_(self.ffn1.weight)
         nn.init.xavier_uniform_(self.ffn2.weight)
 
-        if self.fc1.bias is not None:
+        if self.ffn1.bias is not None:
             nn.init.constant_(self.ffn1.bias, 0.0)
             nn.init.constant_(self.ffn2.bias, 0.0)
 
@@ -110,8 +110,8 @@ class DecoderLayer(nn.Module):
         self.enc_dec_layernorm = nn.LayerNorm(embed_dim, eps=1e-5)
 
         # point-wise ffn
-        self.fc1 = nn.Linear(embed_dim, ffn_dim)
-        self.fc2 = nn.Linear(ffn_dim, embed_dim)
+        self.ffn1 = nn.Linear(embed_dim, ffn_dim)
+        self.ffn2 = nn.Linear(ffn_dim, embed_dim)
         self.ffn_layernorm = nn.LayerNorm(embed_dim, eps=1e-5)
 
         self.reset_parameters()
@@ -120,7 +120,7 @@ class DecoderLayer(nn.Module):
         nn.init.xavier_uniform_(self.ffn1.weight)
         nn.init.xavier_uniform_(self.ffn2.weight)
 
-        if self.fc1.bias is not None:
+        if self.ffn1.bias is not None:
             nn.init.constant_(self.ffn1.bias, 0.0)
             nn.init.constant_(self.ffn2.bias, 0.0)
 
