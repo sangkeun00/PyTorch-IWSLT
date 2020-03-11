@@ -19,11 +19,15 @@ jobs:
         with:
           auto-activate-base: false
           auto-update-conda: true
-          environment-file:: 'environment.yml'
+          environment-file: 'environment.yml'
           activate-environment: nn4nlp-hw3
           python-version: 3.6
       - name: Conda info
         shell: bash -l {0}
-        run: |
-          conda info
-          python -m unittest -v
+        run: conda info
+      - name: Conda list
+        shell: bash -l {0}
+        run: conda list
+      - name: Run unittest
+        shell: bash -l {0}
+        run: python -m unittest -v
