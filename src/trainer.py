@@ -4,6 +4,7 @@ import torch
 import pytorch_lightning as pl
 import data_set
 import model as models
+import lr_scheduler
 
 
 class Seq2SegModel(pl.LightningModule):
@@ -27,15 +28,33 @@ class Seq2SegModel(pl.LightningModule):
         loss = out.sum()
         return {'loss': loss}
 
+    def validation_step(self, batch, batch_nb):
+        # TODO
+        return {}
+
+    def validation_epoch_end(self, outputs):
+        # TODO
+        return {}
+
     def configure_optimizers(self):
-        # TODO: just test! should move enc & dec to the same net!
         opt = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10)
+        if self.args.decay_method == 'inverse_sqrt':
+            sch = lr_scheduler.InverseSqrtScheduler(
+                opt,
+                warmup_steps=self.args.warmup_steps,
+                min_lr=self.args.min_lr)
+        else:
+            raise NotImplementedError()
         return [opt], [sch]
 
     def train_dataloader(self):
         return data_set.get_dataloader(self.data_splits['trn'],
                                        batch_size=self.args.batch_size)
+
+    def val_dataloader(self):
+        return data_set.get_dataloader(self.data_splits['val'],
+                                       batch_size=self.args.batch_size,
+                                       shuffle=False)
 
     def test_dataloader(self):
         return data_set.get_dataloader(self.data_splits['tst'],
@@ -78,11 +97,12 @@ def parse_args():
                         default=0.001,
                         help='learning rate')
     parser.add_argument('--decay-method',
-                        choices=('poly', 'cos'),
-                        default='poly')
+                        choices=('inverse_sqrt', 'cos'),
+                        default='inverse_sqrt')
     parser.add_argument('--min-lr', type=float, default=0.004)
-    parser.add_argument('--warmup_steps', type=int, default=0)
+    parser.add_argument('--warmup-steps', type=int, default=0)
     parser.add_argument('--batch-size', type=int, default=55)
+    parser.add_argument('--label-smoothing', type=float, default=0.0)
 
     # model parameters
     parser.add_argument('--dec-embed-dim', default=6)
