@@ -5,7 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .transformer_layer import EncoderLayer, DecoderLayer
-from .utils import create_mask, positional_embedding
+from .positional_embedding import PositionalEmbedding
+from .utils import create_mask
 
 
 class Transformer(nn.Module):
@@ -68,6 +69,7 @@ class TransformerEncoder(nn.Module):
         self.embed_scale = math.sqrt(enc_embed_dim)
         self.embedding = nn.Embedding(len(src_dict), enc_embed_dim)
         self.embed_dropout = embed_dropout
+        self.positional_embedding = PositionalEmbedding(enc_embed_dim)
 
         # Encoder layers
         self.layers = nn.ModuleList()
@@ -99,7 +101,7 @@ class TransformerEncoder(nn.Module):
         :param src_lengths: [B]
         """
         x = self.embedding(src_tokens) * self.embed_scale
-        x = x + positional_embedding(src_tokens, self.embed_dim)
+        x = x + self.positional_embedding(src_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         mask = create_mask(src_lengths, max_length=src_tokens.size()[-1])
@@ -136,6 +138,7 @@ class TransformerDecoder(nn.Module):
         self.embed_scale = math.sqrt(dec_embed_dim)
         self.embedding = nn.Embedding(len(tgt_dict), dec_embed_dim)
         self.embed_dropout = embed_dropout
+        self.positional_embedding = PositionalEmbedding(dec_embed_dim)
 
         # Decoder Layers
         self.layers = nn.ModuleList()
@@ -161,7 +164,7 @@ class TransformerDecoder(nn.Module):
 
     def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths, cache=None):
         x = self.embedding(tgt_tokens) * self.embed_scale
-        x = x + positional_embedding(tgt_tokens, self.embed_dim)
+        x = x + self.positional_embedding(tgt_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         # TODO: add src_mask
