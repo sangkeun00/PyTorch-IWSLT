@@ -19,8 +19,8 @@ class PositionalEmbedding(nn.Module):
         pos = torch.arange(len(tokens), device=tokens.device).float()
         out = self.emb.unsqueeze(0) * pos.unsqueeze(1)
         out = torch.cat([torch.sin(out), torch.cos(out)], dim=1)
-        out = out.unsqueeze(1)
+        out = out.unsqueeze(0)
 
-        assert out.size() == (len(tokens), 1, self.embed_dim)
+        assert out.size() == (1, len(tokens), self.embed_dim)
 
         return out
