@@ -25,4 +25,4 @@ class PositionalEmbedding(nn.Module):
 
         assert out.size() == (1, tokens.shape[1], self.embed_dim)
 
-        return out
+        return out.detach()

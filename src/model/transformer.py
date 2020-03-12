@@ -158,6 +158,8 @@ class TransformerDecoder(nn.Module):
         self.last_layernorm = nn.LayerNorm(dec_embed_dim, eps=1e-5)
         self.out_linear = nn.Linear(dec_embed_dim, len(tgt_dict))
 
+        self.reset_parameters()
+
     def reset_parameters(self):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
