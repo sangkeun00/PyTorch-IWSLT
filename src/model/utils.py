@@ -14,7 +14,7 @@ def create_mask(lengths, max_length=None, causal=False):
     :param lengths: [B]
     :param max_length: int
 
-    returns [B, T]
+    returns [B, T or 1, T]
     """
     if max_length is None:
         max_length = lengths.max()

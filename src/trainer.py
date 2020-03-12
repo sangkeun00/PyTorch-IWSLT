@@ -82,7 +82,7 @@ def parse_args():
                         default='poly')
     parser.add_argument('--min-lr', type=float, default=0.004)
     parser.add_argument('--warmup_steps', type=int, default=0)
-    parser.add_argument('--batch-size', type=int, default=60)
+    parser.add_argument('--batch-size', type=int, default=55)
 
     # model parameters
     parser.add_argument('--dec-embed-dim', default=6)

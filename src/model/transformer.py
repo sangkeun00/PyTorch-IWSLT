@@ -153,6 +153,7 @@ class TransformerDecoder(nn.Module):
 
         # Final LayerNorm
         self.last_layernorm = nn.LayerNorm(dec_embed_dim, eps=1e-5)
+        self.out_linear = nn.Linear(dec_embed_dim, len(tgt_dict))
 
     def reset_parameters(self):
         nn.init.normal_(self.embedding.weight,
@@ -180,5 +181,6 @@ class TransformerDecoder(nn.Module):
                     encoder_mask=encoder_mask)
 
         x = self.last_layernorm(x)
+        x = self.out_linear(x)
 
         return x
