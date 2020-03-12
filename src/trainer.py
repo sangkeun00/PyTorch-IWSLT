@@ -12,6 +12,7 @@ class Seq2SegModel(pl.LightningModule):
         super().__init__()
         self.args = args
         self.learning_rate = args.learning_rate
+        self.weight_decay = args.weight_decay
         self.data_splits = data_splits
         self.model = models.transformer.Transformer(
             args,
@@ -40,7 +41,16 @@ class Seq2SegModel(pl.LightningModule):
         return {'val_loss': torch.stack(val_losses).mean()}
 
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        if self.args.optim == 'adam':
+            opt = torch.optim.Adam(self.model.parameters(),
+                                   lr=self.learning_rate,
+                                   weight_decay=self.weight_decay)
+        elif self.args.optim == 'adamw':
+            opt = torch.optim.AdamW(self.model.parameters(),
+                                    lr=self.learning_rate,
+                                    weight_decay=self.weight_decay)
+        else:
+            raise NotImplementedError()
         if self.args.decay_method == 'inverse_sqrt':
             sch = lr_scheduler.InverseSqrtScheduler(
                 opt,
@@ -99,9 +109,11 @@ def parse_args():
                         type=float,
                         default=0.001,
                         help='learning rate')
+    parser.add_argument('--optim', choices=('adam', 'adamw'), default='adam')
     parser.add_argument('--decay-method',
                         choices=('inverse_sqrt', 'cos'),
                         default='inverse_sqrt')
+    parser.add_argument('--weight-decay', type=float, default=0.000)
     parser.add_argument('--min-lr', type=float, default=0.004)
     parser.add_argument('--warmup-steps', type=int, default=0)
     parser.add_argument('--batch-size', type=int, default=55)
