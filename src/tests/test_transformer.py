@@ -49,17 +49,8 @@ class TransformerTest(unittest.TestCase):
                 opt.zero_grad()
                 outputs = self.model.forward(src_tokens, src_lengths,
                                              tgt_tokens, tgt_lengths)
-                # [T, B, C] -> [B, T, C]
-                outputs = outputs.transpose(0, 1)
-                outputs = outputs[:, :-1, :]
-                outputs = torch.log_softmax(outputs, dim=-1)
-                tgt_one_hots = F.one_hot(tgt_tokens[:, 1:],
-                                         len(self.data_splits.vocab_tgt))
-                tgt_one_hots = tgt_one_hots.to(torch.float32)
-                inp_q = (1. - utils.create_mask(tgt_lengths - 1)[:, 0, :].to(
-                    torch.float32))
-                nll = -(outputs * tgt_one_hots *
-                        inp_q[:, :, None]).sum() / inp_q.sum()
+                nll = utils.masked_nll(outputs[:, :-1, :], tgt_lengths - 1,
+                                       tgt_tokens[:, 1:])
                 nll.backward()
                 opt.step()
         final_nll = nll.cpu().item()

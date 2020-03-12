@@ -23,18 +23,21 @@ class Seq2SegModel(pl.LightningModule):
 
     def training_step(self, batch, batch_nb):
         src_tokens, src_lengths, tgt_tokens, tgt_lengths = batch
-        out = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
-        # TODO: we need to use actuall loss!
-        loss = out.sum()
+        logits = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
+        loss = models.utils.masked_nll(logits[:, :-1, :], tgt_lengths - 1,
+                                       tgt_tokens[:, 1:])
         return {'loss': loss}
 
     def validation_step(self, batch, batch_nb):
-        # TODO
-        return {}
+        src_tokens, src_lengths, tgt_tokens, tgt_lengths = batch
+        logits = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
+        loss = models.utils.masked_nll(logits[:, :-1, :], tgt_lengths - 1,
+                                       tgt_tokens[:, 1:])
+        return {'val_loss': loss}
 
     def validation_epoch_end(self, outputs):
-        # TODO
-        return {}
+        val_losses = [item['val_loss'] for item in outputs]
+        return {'val_loss': torch.stack(val_losses).mean()}
 
     def configure_optimizers(self):
         opt = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)

@@ -39,7 +39,8 @@ class Transformer(nn.Module):
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         encoder_out = self.encoder(src_tokens, src_lengths)
         decoder_out = self.decoder(encoder_out, src_lengths, tgt_tokens, tgt_lengths)
-        return decoder_out
+        # [B, T, C] by default
+        return decoder_out.transpose(0, 1).contiguous()
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -169,8 +170,6 @@ class TransformerDecoder(nn.Module):
         x = x + self.positional_embedding(tgt_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        # TODO: add src_mask
-        # src_mask =
         mask = create_mask(
                 tgt_lengths,
                 max_length=tgt_tokens.size()[-1],

@@ -1,29 +1,32 @@
 import math
 
 import torch
+import torch.nn.functional as F
 
-"""
-def positional_embedding(src_tokens, embed_dim):
-    # TODO: implement actual positional encoding
-    # size = src_tokens.size()
-    # size = list(size + (embed_dim, ))
-    # return torch.zeros(size, device=src_tokens.device)
-    assert embed_dim % 2 == 0
 
-    max_len = src_tokens.shape[0]
-    half_dim = embed_dim // 2
-    scale = math.log(10000.) / (half_dim - 1)
-    coef = torch.arange(half_dim).float().to(src_tokens)
-    coef = torch.exp(coef * -scale) # (embed_dim//2, )
+def masked_nll(logits, lengths, targets, label_smoothing=0.0):
+    """masked_nll
 
-    pos = torch.arange(max_len).float().to(src_tokens) # (max_len, )
-    emb = coef.unsqueeze(0) * pos.unsqueeze(1)
-    emb = torch.cat([torch.sin(emb), torch.cos(emb)], dim=1)
+    :param logits: [B, T, C]
+    :param lengths: [B]
+    :param targets: [B, T]
+    :param label_smoothing: [0., 1.]
+    """
+    log_probs = torch.log_softmax(logits, dim=-1)
+    n_token = log_probs.size()[-1]
 
-    assert emb.size() == (max_len, embed_dim)
+    tgt_one_hots = F.one_hot(targets, n_token).to(logits.dtype)
+    mask = create_mask(lengths)[:, 0, :].to(logits.dtype)
+    inp_q = 1. - mask
+    nll = -(log_probs * tgt_one_hots).sum(dim=-1)
 
-    return emb.unsqueeze(0)
-"""
+    if label_smoothing > 0.:
+        loss = (nll * (1 - label_smoothing) -
+                log_probs.mean(dim=-1) * label_smoothing)
+        return (inp_q * loss).sum() / inp_q.sum()
+    else:
+        return (inp_q * nll).sum() / inp_q.sum()
+
 
 def create_mask(lengths, max_length=None, causal=False):
     """create_mask
