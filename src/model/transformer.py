@@ -37,9 +37,12 @@ class Transformer(nn.Module):
 
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         encoder_out = self.encoder(src_tokens, src_lengths)
-        # TODO: pass encoder_out
-        decoder_out = self.decoder(tgt_tokens, tgt_lengths)
+        decoder_out = self.decoder(encoder_out, src_lengths, tgt_tokens, tgt_lengths)
         return decoder_out
+
+    def reset_parameters(self):
+        self.encoder.reset_parameters()
+        self.decoder.reset_parameters()
 
 
 
@@ -155,7 +158,7 @@ class TransformerDecoder(nn.Module):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
 
-    def forward(self, tgt_tokens, tgt_lengths, cache=None):
+    def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths, cache=None):
         x = self.embedding(tgt_tokens) * self.embed_scale
         x = x + positional_embedding(tgt_tokens, self.embed_dim)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
@@ -166,6 +169,16 @@ class TransformerDecoder(nn.Module):
                 tgt_lengths,
                 max_length=tgt_tokens.size()[-1],
                 causal=True)
+        encoder_mask = create_mask(
+                src_lengths,
+                max_length=encoder_out.size()[0])
+        x = x.transpose(0, 1)
+        for layer in self.layers:
+            x = layer(x,
+                    encoder_out=encoder_out,
+                    self_mask=mask,
+                    encoder_mask=encoder_mask)
 
-        # TODO
+        x = self.last_layernorm(x)
+
         return x
