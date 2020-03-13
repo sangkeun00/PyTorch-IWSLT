@@ -15,8 +15,9 @@ def masked_nll(logits, lengths, targets, label_smoothing=0.0):
     log_probs = torch.log_softmax(logits, dim=-1)
     n_token = log_probs.size()[-1]
 
+    max_length = log_probs.size()[1]
     tgt_one_hots = F.one_hot(targets, n_token).to(logits.dtype)
-    mask = create_mask(lengths)[:, 0, :].to(logits.dtype)
+    mask = create_mask(lengths, max_length=max_length)[:, 0, :].to(logits.dtype)
     inp_q = 1. - mask
     nll = -(log_probs * tgt_one_hots).sum(dim=-1)
 
