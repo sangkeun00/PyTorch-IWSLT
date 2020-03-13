@@ -85,7 +85,7 @@ class SingleDataset(Dataset):
         self.attach_ends = attach_ends
         sents_src = []
         for sent in load_sents(path_src):
-            sent = vocab_src.encode_sent(sent, attach_ends=attach_ends)
+            sent = vocab_src.encode_sent(sent, attach_ends=False)
 
             sents_src.append(sent)
         sents_tgt = []
