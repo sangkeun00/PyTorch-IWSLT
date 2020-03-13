@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .multihead_attention import MultiHeadAttention
+from torch.nn import MultiheadAttention
+
+from .utils import create_causual_mask
 
 
 class EncoderLayer(nn.Module):
@@ -24,11 +26,10 @@ class EncoderLayer(nn.Module):
         self.dropout = dropout
 
         # self-attention part
-        self.self_attn = MultiHeadAttention(
+        self.self_attn = MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
-            attn_dropout=attn_dropout,
-            mode='fc',
+            dropout=attn_dropout
         )
         self.attn_layernorm = nn.LayerNorm(embed_dim, eps=1e-5)
 
@@ -52,7 +53,7 @@ class EncoderLayer(nn.Module):
         identity = x
         if self.layernorm_before:
             x = self.attn_layernorm(x)
-        x = self.self_attn(query=x, key=x, value=x, mask=mask)
+        x, _ = self.self_attn(query=x, key=x, value=x, key_padding_mask=mask)
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity
         if not self.layernorm_before:
@@ -92,20 +93,18 @@ class DecoderLayer(nn.Module):
         self.dropout = dropout
 
         # self-attention part
-        self.self_attn = MultiHeadAttention(
+        self.self_attn = MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
-            attn_dropout=attn_dropout,
-            mode='fc',
+            dropout=attn_dropout
         )
         self.attn_layernorm = nn.LayerNorm(embed_dim, eps=1e-5)
 
         # end-dec attention part
-        self.enc_dec_attention = MultiHeadAttention(
+        self.enc_dec_attention = MultiheadAttention(
             embed_dim=embed_dim,
             num_heads=num_heads,
-            attn_dropout=attn_dropout,
-            mode='fc',
+            dropout=attn_dropout
         )
         self.enc_dec_layernorm = nn.LayerNorm(embed_dim, eps=1e-5)
 
@@ -129,7 +128,11 @@ class DecoderLayer(nn.Module):
         identity = x
         if self.layernorm_before:
             x = self.attn_layernorm(x)
-        x = self.self_attn(query=x, key=x, value=x, mask=self_mask)
+
+        attn_mask = create_causual_mask(x.size(0), dtype=x.dtype).to(x.device)
+        x, _ = self.self_attn(query=x, key=x, value=x,
+                              key_padding_mask=self_mask,
+                              attn_mask=attn_mask)
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity
         if not self.layernorm_before:
@@ -139,11 +142,11 @@ class DecoderLayer(nn.Module):
         identity = x
         if self.layernorm_before:
             x = self.enc_dec_layernorm(x)
-        x = self.enc_dec_attention(
+        x, _ = self.enc_dec_attention(
             query=x,
             key=encoder_out,
             value=encoder_out,
-            mask=encoder_mask
+            key_padding_mask=encoder_mask.squeeze(1)
         )
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity

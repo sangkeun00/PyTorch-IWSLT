@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 from .transformer_layer import EncoderLayer, DecoderLayer
 from .positional_embedding import PositionalEmbedding
-from .utils import create_mask
+from .utils import create_padding_mask
 
 
 class Transformer(nn.Module):
@@ -104,7 +104,7 @@ class TransformerEncoder(nn.Module):
         x = x + self.positional_embedding(src_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_mask(src_lengths, max_length=src_tokens.size()[-1])
+        mask = create_padding_mask(src_lengths, max_length=src_tokens.size(-1))
 
         x = x.transpose(0, 1)
 
@@ -164,23 +164,22 @@ class TransformerDecoder(nn.Module):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
 
-    def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths, cache=None):
+    def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths):
         x = self.embedding(tgt_tokens) * self.embed_scale
         x = x + self.positional_embedding(tgt_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_mask(
+        self_mask = create_padding_mask(
                 tgt_lengths,
-                max_length=tgt_tokens.size()[-1],
-                causal=True)
-        encoder_mask = create_mask(
+                max_length=tgt_tokens.size(-1))
+        encoder_mask = create_padding_mask(
                 src_lengths,
-                max_length=encoder_out.size()[0])
+                max_length=encoder_out.size(0))
         x = x.transpose(0, 1)
         for layer in self.layers:
             x = layer(x,
                     encoder_out=encoder_out,
-                    self_mask=mask,
+                    self_mask=self_mask,
                     encoder_mask=encoder_mask)
 
         x = self.last_layernorm(x)

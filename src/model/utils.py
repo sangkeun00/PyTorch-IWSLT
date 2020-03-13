@@ -17,7 +17,7 @@ def masked_nll(logits, lengths, targets, label_smoothing=0.0):
 
     max_length = log_probs.size()[1]
     tgt_one_hots = F.one_hot(targets, n_token).to(logits.dtype)
-    mask = create_mask(lengths, max_length=max_length)[:, 0, :].to(logits.dtype)
+    mask = create_padding_mask(lengths, max_length=max_length).to(logits.dtype)
     inp_q = 1. - mask
     nll = -(log_probs * tgt_one_hots).sum(dim=-1)
 
@@ -29,7 +29,7 @@ def masked_nll(logits, lengths, targets, label_smoothing=0.0):
         return (inp_q * nll).sum() / inp_q.sum()
 
 
-def create_mask(lengths, max_length=None, causal=False):
+def create_padding_mask(lengths, max_length=None):
     """create_mask
 
     :param lengths: [B]
@@ -41,8 +41,16 @@ def create_mask(lengths, max_length=None, causal=False):
         max_length = lengths.max()
     index = torch.arange(max_length, device=lengths.device)
     padding_mask = index[None, :] >= lengths[:, None]
-    if causal:
-        causal_mask = index[:, None] < index[None, :]
-        return (causal_mask[None, :, :] | padding_mask[:, None, :])
+    return padding_mask
 
     return padding_mask[:, None, :]
+
+
+def create_causual_mask(size, dtype=torch.float32):
+    index = torch.arange(size)
+    causal_mask = index[:, None] < index[None, :]
+    shape = causal_mask.size()
+    causal_mask = torch.where(causal_mask,
+                              torch.ones(shape, dtype=dtype) * float('-inf'),
+                              torch.zeros(shape, dtype=dtype))
+    return causal_mask
