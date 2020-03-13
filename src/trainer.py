@@ -44,10 +44,12 @@ class Seq2SegModel(pl.LightningModule):
         if self.args.optim == 'adam':
             opt = torch.optim.Adam(self.model.parameters(),
                                    lr=self.learning_rate,
+                                   betas=(0.9, 0.997),
                                    weight_decay=self.weight_decay)
         elif self.args.optim == 'adamw':
             opt = torch.optim.AdamW(self.model.parameters(),
                                     lr=self.learning_rate,
+                                    betas=(0.9, 0.997)
                                     weight_decay=self.weight_decay)
         else:
             raise NotImplementedError()
