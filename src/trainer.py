@@ -82,6 +82,8 @@ def main():
 
     # initialize dataset
     data_splits = data_set.SplittedDataset(args.data_dir,
+                                           lang_src=args.lang_src,
+                                           lang_tgt=args.lang_tgt,
                                            lowercase=args.lowercase)
 
     # initialize model
@@ -104,39 +106,41 @@ def parse_args():
     # data parameters
     parser.add_argument('--lowercase', action='store_true')
     parser.add_argument('--data-dir', default='data/iwslt-2014')
+    parser.add_argument('--lang-src', default='en')
+    parser.add_argument('--lang-tgt', default='de')
 
     # training parameters
     parser.add_argument('--max-epochs', type=int, default=100)
     parser.add_argument('--learning-rate',
                         type=float,
-                        default=0.001,
+                        default=5e-4,
                         help='learning rate')
     parser.add_argument('--optim', choices=('adam', 'adamw'), default='adam')
     parser.add_argument('--decay-method',
                         choices=('inverse_sqrt', 'cos'),
                         default='inverse_sqrt')
-    parser.add_argument('--weight-decay', type=float, default=0.000)
+    parser.add_argument('--weight-decay', type=float, default=0.0001)
     parser.add_argument('--min-lr', type=float, default=0.004)
-    parser.add_argument('--warmup-steps', type=int, default=0)
+    parser.add_argument('--warmup-steps', type=int, default=4000)
     parser.add_argument('--batch-size', type=int, default=55)
     parser.add_argument('--label-smoothing', type=float, default=0.0)
 
     # model parameters
-    parser.add_argument('--dec-embed-dim', default=6)
-    parser.add_argument('--dec-ffn-dim', default=6)
-    parser.add_argument('--dec-num-heads', default=6)
+    parser.add_argument('--dec-embed-dim', default=512)
+    parser.add_argument('--dec-ffn-dim', default=1024)
+    parser.add_argument('--dec-num-heads', default=4)
     parser.add_argument('--dec-num-layers', default=6)
     parser.add_argument('--dec-layernorm-before', action='store_true')
-    parser.add_argument('--enc-embed-dim', default=6)
-    parser.add_argument('--enc-ffn-dim', default=6)
-    parser.add_argument('--enc-num-heads', default=6)
+    parser.add_argument('--enc-embed-dim', default=512)
+    parser.add_argument('--enc-ffn-dim', default=1024)
+    parser.add_argument('--enc-num-heads', default=4)
     parser.add_argument('--enc-num-layers', default=6)
     parser.add_argument('--enc-layernorm-before', action='store_true')
 
-    parser.add_argument('--dropout', default=0.1)
-    parser.add_argument('--act-dropout', default=0.1)
-    parser.add_argument('--attn-dropout', default=0.1)
-    parser.add_argument('--embed-dropout', default=0.1)
+    parser.add_argument('--dropout', default=0.3)
+    parser.add_argument('--act-dropout', default=0.0)
+    parser.add_argument('--attn-dropout', default=0.0)
+    parser.add_argument('--embed-dropout', default=0.3)
 
     return parser.parse_args()
 
