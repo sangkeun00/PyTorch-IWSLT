@@ -115,15 +115,15 @@ def parse_args():
                         type=float,
                         default=5e-4,
                         help='learning rate')
-    parser.add_argument('--optim', choices=('adam', 'adamw'), default='adam')
+    parser.add_argument('--optim', choices=('adam', 'adamw'), default='adamw')
     parser.add_argument('--decay-method',
                         choices=('inverse_sqrt', 'cos'),
                         default='inverse_sqrt')
     parser.add_argument('--weight-decay', type=float, default=0.0001)
-    parser.add_argument('--min-lr', type=float, default=0.004)
+    parser.add_argument('--min-lr', type=float, default=1e-9)
     parser.add_argument('--warmup-steps', type=int, default=4000)
     parser.add_argument('--batch-size', type=int, default=55)
-    parser.add_argument('--label-smoothing', type=float, default=0.0)
+    parser.add_argument('--label-smoothing', type=float, default=0.)
 
     # model parameters
     parser.add_argument('--dec-embed-dim', default=512)
