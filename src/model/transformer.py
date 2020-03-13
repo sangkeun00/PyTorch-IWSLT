@@ -39,8 +39,7 @@ class Transformer(nn.Module):
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         encoder_out = self.encoder(src_tokens, src_lengths)
         decoder_out = self.decoder(encoder_out, src_lengths, tgt_tokens, tgt_lengths)
-        # [B, T, C] by default
-        return decoder_out.transpose(0, 1).contiguous()
+        return decoder_out
 
     def reset_parameters(self):
         self.encoder.reset_parameters()
@@ -186,5 +185,7 @@ class TransformerDecoder(nn.Module):
 
         x = self.last_layernorm(x)
         x = self.out_linear(x)
+        # [B, T, C] by default
+        return x.transpose(0, 1).contiguous()
 
         return x

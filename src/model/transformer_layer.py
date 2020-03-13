@@ -124,7 +124,7 @@ class DecoderLayer(nn.Module):
             nn.init.constant_(self.ffn1.bias, 0.0)
             nn.init.constant_(self.ffn2.bias, 0.0)
 
-    def forward(self, x, encoder_out, self_mask, encoder_mask, cache=None):
+    def forward(self, x, encoder_out, self_mask, encoder_mask):
         # self-attn part
         identity = x
         if self.layernorm_before:
@@ -143,8 +143,7 @@ class DecoderLayer(nn.Module):
             query=x,
             key=encoder_out,
             value=encoder_out,
-            mask=encoder_mask,
-            cache=cache
+            mask=encoder_mask
         )
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity
