@@ -14,12 +14,12 @@ class Seq2SegModel(pl.LightningModule):
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
         self.data_splits = data_splits
-        if args.transformer_impl == 'custom':
+        if args.transformer_impl == 'pytorch':
             self.model = models.easy_transformer.EasyTransformer(
                 args,
                 src_dict=data_splits.vocab_src,
                 tgt_dict=data_splits.vocab_tgt)
-        elif args.transformer_impl == 'pytorch':
+        elif args.transformer_impl == 'custom':
             self.model = models.transformer.Transformer(
                 args,
                 src_dict=data_splits.vocab_src,
