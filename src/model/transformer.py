@@ -145,7 +145,6 @@ class TransformerDecoder(nn.Module):
         super().__init__()
 
         self.embed_dim = dec_embed_dim
-        self.pad_id = tgt_dict.PAD_ID
 
         # Embedding
         self.embed_scale = math.sqrt(dec_embed_dim)
