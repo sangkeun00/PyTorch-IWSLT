@@ -123,15 +123,26 @@ class DecoderLayer(nn.Module):
             nn.init.constant_(self.ffn1.bias, 0.0)
             nn.init.constant_(self.ffn2.bias, 0.0)
 
-    def forward(self, x, encoder_out, src_key_padding_mask, tgt_key_padding_mask, tgt_mask):
+    def forward(
+            self,
+            x,
+            encoder_out,
+            src_key_padding_mask,
+            tgt_key_padding_mask,
+            tgt_mask,
+            prev_x=None):
         # self-attn part
         identity = x
         if self.layernorm_before:
             x = self.attn_layernorm(x)
 
-        x, _ = self.self_attn(query=x, key=x, value=x,
-                              key_padding_mask=tgt_key_padding_mask,
-                              attn_mask=tgt_mask)
+        if prev_x is None:
+            kv = x
+        else:
+            kv = torch.concat([prev_x, x], dim=0)
+        x = self.self_attn(query=x, key=kv, value=kv,
+                           key_padding_mask=tgt_key_padding_mask,
+                           attn_mask=tgt_mask)[0]
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity
         if not self.layernorm_before:

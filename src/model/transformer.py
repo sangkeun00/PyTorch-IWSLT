@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from .transformer_layer import EncoderLayer, DecoderLayer
 from .positional_embedding import PositionalEmbedding
 from .utils import create_causual_mask
+from .utils import cache_states
+from .utils import get_states
 
 
 class Transformer(nn.Module):
@@ -187,19 +189,22 @@ class TransformerDecoder(nn.Module):
             nn.init.normal_(self.out_linear.weight,
                             mean=0, std=1/self.embed_scale)
 
-    def forward(self, encoder_out, tgt_tokens, src_key_padding_mask, tgt_key_padding_mask, tgt_mask):
+    def forward(self, encoder_out, tgt_tokens, src_key_padding_mask, tgt_key_padding_mask, tgt_mask, cache=None):
         x = self.embedding(tgt_tokens) * self.embed_scale
         x = x + self.positional_embedding(tgt_tokens)
         x = x * (1. - tgt_key_padding_mask.float().unsqueeze(2))
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         x = x.transpose(0, 1)
-        for layer in self.layers:
+        cache_states(cache, 0, x)
+        for idx, layer in enumerate(self.layers, start=1):
             x = layer(x,
-                    encoder_out=encoder_out,
-                    src_key_padding_mask=src_key_padding_mask,
-                    tgt_key_padding_mask=tgt_key_padding_mask,
-                    tgt_mask=tgt_mask)
+                      encoder_out=encoder_out,
+                      src_key_padding_mask=src_key_padding_mask,
+                      tgt_key_padding_mask=tgt_key_padding_mask,
+                      tgt_mask=tgt_mask,
+                      prev_x=get_states(cache, idx-1))
+            cache_states(cache, idx, x)
 
         x = self.last_layernorm(x)
         # [T, B, C] -> [B, T, C]
