@@ -14,7 +14,11 @@ class Seq2SegModel(pl.LightningModule):
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
         self.data_splits = data_splits
-        self.model = models.transformer.Transformer(
+        #self.model = models.transformer.Transformer(
+        #    args,
+        #    src_dict=data_splits.vocab_src,
+        #    tgt_dict=data_splits.vocab_tgt)
+        self.model = models.easy_transformer.EasyTransformer(
             args,
             src_dict=data_splits.vocab_src,
             tgt_dict=data_splits.vocab_tgt)
