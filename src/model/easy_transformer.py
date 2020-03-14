@@ -13,6 +13,7 @@ class EasyTransformer(nn.Module):
 
         self.args = args
         self.pad_id = src_dict.PAD_ID
+        self.embed_dropout = args.embed_dropout
 
         self.transformer = nn.Transformer(
             d_model=args.enc_embed_dim,
@@ -20,7 +21,7 @@ class EasyTransformer(nn.Module):
             num_encoder_layers=args.enc_num_layers,
             num_decoder_layers=args.dec_num_layers,
             dim_feedforward=args.enc_ffn_dim,
-            dropout=0.1,
+            dropout=args.dropout,
             activation='relu',
         )
 
@@ -47,13 +48,13 @@ class EasyTransformer(nn.Module):
 
         src = self.embed_scale * self.enc_embedding(src_tokens)
         src = src + self.positional_embedding(src)
-        src = F.dropout(src, p=0.1, training=self.training)
-        src = src * src_mask
+        src = F.dropout(src, p=self.embed_dropout, training=self.training)
+        src = src * (1. - src_mask)
 
         tgt = self.embed_scale * self.dec_embedding(tgt_tokens)
         tgt = tgt + self.positional_embedding(tgt)
-        tgt = F.dropout(tgt, p=0.1, training=self.training)
-        tgt = tgt * tgt_mask
+        tgt = F.dropout(tgt, p=self.embed_dropout, training=self.training)
+        tgt = tgt * (1. - tgt_mask)
 
         return src, tgt
 
