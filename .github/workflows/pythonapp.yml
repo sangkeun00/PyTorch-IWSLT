@@ -22,12 +22,11 @@ jobs:
           environment-file: 'environment.yml'
           activate-environment: nn4nlp-hw3
           python-version: 3.6
-      - name: Conda info
+      - name: Lint with flake8
         shell: bash -l {0}
-        run: conda info
-      - name: Conda list
-        shell: bash -l {0}
-        run: conda list
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
       - name: Run unittest
         shell: bash -l {0}
         run: python -m unittest -v
