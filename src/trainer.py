@@ -92,7 +92,8 @@ def main():
     trainer = pl.Trainer(
         precision=16 if args.fp16 else 32,
         max_epochs=args.max_epochs,
-        gpus=args.gpus,
+        gpus=args.gpu,
+        amp_level='O1',
     )
     trainer.fit(model)
 
