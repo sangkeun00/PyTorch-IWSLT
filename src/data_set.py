@@ -96,7 +96,8 @@ class SingleDataset(Dataset):
             sents_tgt.append(sent)
 
         for i in range(len(sents_src)):
-            sents_src[i] = sents_src[i] + [0] * (src_max_len - len(sents_src[i]))
+            sents_src[i] = sents_src[i] + [0] * (src_max_len -
+                                                 len(sents_src[i]))
 
         self.sents_src = sents_src
         self.sents_tgt = sents_tgt
@@ -250,7 +251,11 @@ class LenMatchBatchSampler(torch.utils.data.BatchSampler):
         assert len(self) == yielded, "produced an incorrect number of batches."
 
 
-def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
+def get_dataloader(dset,
+                   batch_size,
+                   shuffle=True,
+                   sample_by_length=True,
+                   num_workers=2):
     vocab_src = dset.vocab_src
     vocab_tgt = dset.vocab_tgt
     assert vocab_src.PAD_ID == vocab_tgt.PAD_ID
@@ -279,19 +284,27 @@ def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
         lengths = torch.tensor(lengths, dtype=torch.long)
         return data, lengths
 
-
     def my_collate(batch):
         src_seqs, src_lengths = pack_seqs([item[0] for item in batch])
-        tgt_seqs, tgt_seqs2, tgt_lengths = pad_seqs([item[1] for item in batch])
+        tgt_seqs, tgt_seqs2, tgt_lengths = pad_seqs(
+            [item[1] for item in batch])
         return [src_seqs, src_lengths, tgt_seqs, tgt_seqs2, tgt_lengths]
 
-    ran_sampler = torch.utils.data.RandomSampler(dset)
-    len_sampler = LenMatchBatchSampler(ran_sampler, batch_size=batch_size,
-                                       drop_last=False)
-
-    dataloader = DataLoader(dset,
-                            num_workers=num_workers,
-                            collate_fn=my_collate,
-                            batch_sampler=len_sampler,
-                            pin_memory=True)
+    if sample_by_length and shuffle:
+        ran_sampler = torch.utils.data.RandomSampler(dset)
+        len_sampler = LenMatchBatchSampler(ran_sampler,
+                                           batch_size=batch_size,
+                                           drop_last=False)
+        dataloader = DataLoader(dset,
+                                num_workers=num_workers,
+                                collate_fn=my_collate,
+                                batch_sampler=len_sampler,
+                                pin_memory=True)
+    else:
+        dataloader = DataLoader(dset,
+                                batch_size=batch_size,
+                                shuffle=shuffle,
+                                num_workers=num_workers,
+                                collate_fn=my_collate,
+                                pin_memory=True)
     return dataloader

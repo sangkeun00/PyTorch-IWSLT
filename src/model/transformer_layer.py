@@ -139,7 +139,7 @@ class DecoderLayer(nn.Module):
         if prev_x is None:
             kv = x
         else:
-            kv = torch.concat([prev_x, x], dim=0)
+            kv = torch.cat([prev_x, x], dim=0)
         x = self.self_attn(query=x, key=kv, value=kv,
                            key_padding_mask=tgt_key_padding_mask,
                            attn_mask=tgt_mask)[0]
