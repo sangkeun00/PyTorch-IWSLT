@@ -145,6 +145,7 @@ class TransformerDecoder(nn.Module):
         act_dropout=0.,
         embed_dropout=0.,
         dropout=0.,
+        tied_weight=True,
     ):
         super().__init__()
 
@@ -172,15 +173,19 @@ class TransformerDecoder(nn.Module):
 
         # Final LayerNorm
         self.last_layernorm = nn.LayerNorm(dec_embed_dim, eps=1e-5)
-        self.out_linear = nn.Linear(dec_embed_dim, len(tgt_dict))
+        self.out_linear = None
+        if not tied_weight:
+            self.out_linear = nn.Linear(dec_embed_dim, len(tgt_dict),
+                                        bias=False)
 
         self.reset_parameters()
 
     def reset_parameters(self):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
-        nn.init.normal_(self.out_linear.weight,
-                        mean=0, std=1/self.embed_scale)
+        if self.out_linear is not None:
+            nn.init.normal_(self.out_linear.weight,
+                            mean=0, std=1/self.embed_scale)
 
     def forward(self, encoder_out, tgt_tokens, src_key_padding_mask, tgt_key_padding_mask, tgt_mask):
         x = self.embedding(tgt_tokens) * self.embed_scale
@@ -197,8 +202,12 @@ class TransformerDecoder(nn.Module):
                     tgt_mask=tgt_mask)
 
         x = self.last_layernorm(x)
-        x = self.out_linear(x)
-        # [B, T, C] by default
-        return x.transpose(0, 1).contiguous()
+        # [T, B, C] -> [B, T, C]
+        x = x.transpose(0, 1)
+
+        if self.out_linear is not None:
+            x = self.out_linear(x)
+        else:
+            x = F.linear(x, self.embedding.weight)
 
         return x
