@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class PositionalEmbedding(nn.Module):
-    def __init__(self, embed_dim):
+    def __init__(self, embed_dim, max_len=500):
         super().__init__()
 
         assert embed_dim % 2 == 0
@@ -14,15 +14,14 @@ class PositionalEmbedding(nn.Module):
         half_dim = embed_dim // 2
 
         scale = math.log(10000.) / (half_dim - 1)
-        emb = torch.exp(torch.arange(half_dim).float() * -scale)
-        self.register_buffer('emb', emb)
+        emb = torch.exp(torch.arange(half_dim).float() * -scale).unsqueeze(0)
+        pos = torch.arange(max_len).float().unsqueeze(1)
+        pe = emb * pos
+        pe = torch.cat([torch.sin(pe), torch.cos(pe)], dim=1)
+        self.register_buffer('pe', pe)
 
     def forward(self, tokens):
-        pos = torch.arange(tokens.shape[1], device=tokens.device).float()
-        out = self.emb.unsqueeze(0) * pos.unsqueeze(1)
-        out = torch.cat([torch.sin(out), torch.cos(out)], dim=1)
+        out = self.pe[:tokens.shape[1], :]
         out = out.unsqueeze(0)
-
-        assert out.size() == (1, tokens.shape[1], self.embed_dim)
 
         return out.detach()
