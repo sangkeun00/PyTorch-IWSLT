@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .positional_embedding import PositionalEmbedding
+from .utils import create_causual_mask
 
 
 class EasyTransformer(nn.Module):
@@ -62,13 +63,12 @@ class EasyTransformer(nn.Module):
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         src, tgt = self.forward_embedding(src_tokens, tgt_tokens)
 
-        src_mask = None                                 # Should be None
-        tgt_mask = self.generate_tgt_mask(tgt_tokens)   # Need to check
-        memory_mask = None                              # Need to check
-        src_key_padding_mask = (src_tokens == self.pad_id)     # Need to check
-        tgt_key_padding_mask = (tgt_tokens == self.pad_id)     # Need to check
-        memory_key_padding_mask = src_key_padding_mask.clone() # Need to check
-
+        src_mask = None                                # Should be None
+        tgt_mask = create_causual_mask(tgt_tokens.size(1)).to(tgt_tokens.device)
+        memory_mask = None
+        src_key_padding_mask = (src_tokens == self.pad_id)
+        tgt_key_padding_mask = (tgt_tokens == self.pad_id)
+        memory_key_padding_mask = src_key_padding_mask.clone()
 
         src = src.transpose(0, 1)
         tgt = tgt.transpose(0, 1)
@@ -88,10 +88,3 @@ class EasyTransformer(nn.Module):
         out = self.out(out)
 
         return out
-
-    def generate_tgt_mask(self, tgt_tokens):
-        sz = tgt_tokens.shape[1]
-        mask = torch.triu(torch.ones(sz, sz)) == 1
-        mask = mask.transpose(0, 1)
-        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
-        return mask.to(tgt_tokens.device)

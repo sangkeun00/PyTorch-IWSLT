@@ -5,6 +5,7 @@ import torch
 import torch.nn.functional as F
 
 from ..model import transformer
+from ..model import easy_transformer
 from ..model import utils
 from .. import data_set
 
@@ -32,30 +33,44 @@ class TransformerTest(unittest.TestCase):
             self.args,
             src_dict=self.data_splits.vocab_src,
             tgt_dict=self.data_splits.vocab_tgt)
+        self.easy_model = easy_transformer.EasyTransformer(
+            self.args,
+            src_dict=self.data_splits.vocab_src,
+            tgt_dict=self.data_splits.vocab_tgt)
 
-    def test_runnable(self):
-        self.model.reset_parameters()
+    def runnable_check(self, model):
+        model.reset_parameters()
         dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
         for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
-            self.model.forward(src_tokens, src_lengths, tgt_inputs,
-                               tgt_lengths)
+            model.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
 
-    def test_can_converge(self):
-        self.model.reset_parameters()
+    def converge_check(self, model):
+        model.reset_parameters()
         dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
-        opt = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        opt = torch.optim.Adam(model.parameters(), lr=0.001)
         for _ in range(15):
             for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
                 opt.zero_grad()
-                outputs = self.model.forward(src_tokens, src_lengths,
-                                             tgt_inputs, tgt_lengths)
+                outputs = model.forward(src_tokens, src_lengths, tgt_inputs,
+                                        tgt_lengths)
                 nll = utils.masked_nll(outputs, tgt_lengths, tgt_outputs)
                 nll.backward()
                 opt.step()
         final_nll = nll.cpu().item()
-        self.assertLessEqual(final_nll, 0.1,
+        self.assertLessEqual(final_nll, 0.15,
                              'loss must converge for simple data')
 
+    def test_runnable(self):
+        self.runnable_check(self.model)
+
+    def test_can_converge(self):
+        self.converge_check(self.model)
+
+    def test_easy_runnable(self):
+        self.runnable_check(self.easy_model)
+
+    def test_easy_can_converge(self):
+        self.converge_check(self.easy_model)
 
 if __name__ == '__main__':
     unittest.main()

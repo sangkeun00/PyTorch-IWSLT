@@ -123,16 +123,15 @@ class DecoderLayer(nn.Module):
             nn.init.constant_(self.ffn1.bias, 0.0)
             nn.init.constant_(self.ffn2.bias, 0.0)
 
-    def forward(self, x, encoder_out, self_mask, encoder_mask):
+    def forward(self, x, encoder_out, src_key_padding_mask, tgt_key_padding_mask, tgt_mask):
         # self-attn part
         identity = x
         if self.layernorm_before:
             x = self.attn_layernorm(x)
 
-        attn_mask = create_causual_mask(x.size(0), dtype=x.dtype).to(x.device)
         x, _ = self.self_attn(query=x, key=x, value=x,
-                              key_padding_mask=self_mask,
-                              attn_mask=attn_mask)
+                              key_padding_mask=tgt_key_padding_mask,
+                              attn_mask=tgt_mask)
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity
         if not self.layernorm_before:
@@ -146,7 +145,7 @@ class DecoderLayer(nn.Module):
             query=x,
             key=encoder_out,
             value=encoder_out,
-            key_padding_mask=encoder_mask.squeeze(1)
+            key_padding_mask=src_key_padding_mask
         )
         x = F.dropout(x, p=self.dropout, training=self.training)
         x = x + identity

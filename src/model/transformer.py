@@ -6,12 +6,16 @@ import torch.nn.functional as F
 
 from .transformer_layer import EncoderLayer, DecoderLayer
 from .positional_embedding import PositionalEmbedding
-from .utils import create_padding_mask
+from .utils import create_causual_mask
 
 
 class Transformer(nn.Module):
     def __init__(self, args, src_dict, tgt_dict):
         super().__init__()
+
+        self.args = args
+        self.pad_id = src_dict.PAD_ID
+
         self.encoder = TransformerEncoder(
             enc_embed_dim=args.enc_embed_dim,
             enc_ffn_dim=args.enc_ffn_dim,
@@ -37,8 +41,18 @@ class Transformer(nn.Module):
             dropout=args.dropout)
 
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
-        encoder_out = self.encoder(src_tokens, src_lengths)
-        decoder_out = self.decoder(encoder_out, src_lengths, tgt_tokens, tgt_lengths)
+
+        src_key_padding_mask = (src_tokens == self.pad_id)
+        tgt_key_padding_mask = (tgt_tokens == self.pad_id)
+        tgt_mask = create_causual_mask(tgt_tokens.size(1)).to(tgt_tokens.device)
+
+        encoder_out = self.encoder(src_tokens, src_key_padding_mask=src_key_padding_mask)
+        decoder_out = self.decoder(
+                encoder_out,
+                tgt_tokens,
+                src_key_padding_mask=src_key_padding_mask,
+                tgt_key_padding_mask=tgt_key_padding_mask,
+                tgt_mask=tgt_mask)
         return decoder_out
 
     def reset_parameters(self):
@@ -94,7 +108,7 @@ class TransformerEncoder(nn.Module):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
 
-    def forward(self, src_tokens, src_lengths):
+    def forward(self, src_tokens, src_key_padding_mask):
         """forward
 
         :param src_tokens: [B, T]
@@ -104,12 +118,10 @@ class TransformerEncoder(nn.Module):
         x = x + self.positional_embedding(src_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        mask = create_padding_mask(src_lengths, max_length=src_tokens.size(-1))
-
         x = x.transpose(0, 1)
 
         for layer in self.layers:
-            x = layer(x, mask=mask)
+            x = layer(x, mask=src_key_padding_mask)
 
         x = self.last_layernorm(x)
 
@@ -133,6 +145,7 @@ class TransformerDecoder(nn.Module):
         super().__init__()
 
         self.embed_dim = dec_embed_dim
+        self.pad_id = tgt_dict.PAD_ID
 
         # Embedding
         self.embed_scale = math.sqrt(dec_embed_dim)
@@ -166,23 +179,18 @@ class TransformerDecoder(nn.Module):
         nn.init.normal_(self.out_linear.weight,
                         mean=0, std=1/self.embed_scale)
 
-    def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths):
+    def forward(self, encoder_out, tgt_tokens, src_key_padding_mask, tgt_key_padding_mask, tgt_mask):
         x = self.embedding(tgt_tokens) * self.embed_scale
         x = x + self.positional_embedding(tgt_tokens)
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
-        self_mask = create_padding_mask(
-                tgt_lengths,
-                max_length=tgt_tokens.size(-1))
-        encoder_mask = create_padding_mask(
-                src_lengths,
-                max_length=encoder_out.size(0))
         x = x.transpose(0, 1)
         for layer in self.layers:
             x = layer(x,
                     encoder_out=encoder_out,
-                    self_mask=self_mask,
-                    encoder_mask=encoder_mask)
+                    src_key_padding_mask=src_key_padding_mask,
+                    tgt_key_padding_mask=tgt_key_padding_mask,
+                    tgt_mask=tgt_mask)
 
         x = self.last_layernorm(x)
         x = self.out_linear(x)
