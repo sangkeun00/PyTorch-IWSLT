@@ -14,14 +14,16 @@ class Seq2SegModel(pl.LightningModule):
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
         self.data_splits = data_splits
-        #self.model = models.transformer.Transformer(
-        #    args,
-        #    src_dict=data_splits.vocab_src,
-        #    tgt_dict=data_splits.vocab_tgt)
-        self.model = models.easy_transformer.EasyTransformer(
-            args,
-            src_dict=data_splits.vocab_src,
-            tgt_dict=data_splits.vocab_tgt)
+        if args.transformer_impl == 'custom':
+            self.model = models.easy_transformer.EasyTransformer(
+                args,
+                src_dict=data_splits.vocab_src,
+                tgt_dict=data_splits.vocab_tgt)
+        elif args.transformer_impl == 'pytorch':
+            self.model = models.transformer.Transformer(
+                args,
+                src_dict=data_splits.vocab_src,
+                tgt_dict=data_splits.vocab_tgt)
 
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         return self.model(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
@@ -92,13 +94,11 @@ def main():
     # initialize model
     model = Seq2SegModel(args, data_splits=data_splits)
 
-    trainer = pl.Trainer(
-        precision=16 if args.fp16 else 32,
-        max_epochs=args.max_epochs,
-        gpus=args.gpus,
-        amp_level='O1',
-        accumulate_grad_batches=2
-    )
+    trainer = pl.Trainer(precision=16 if args.fp16 else 32,
+                         max_epochs=args.max_epochs,
+                         gpus=args.gpus,
+                         amp_level='O1',
+                         accumulate_grad_batches=2)
     trainer.fit(model)
 
 
@@ -131,6 +131,9 @@ def parse_args():
     parser.add_argument('--label-smoothing', type=float, default=0.)
 
     # model parameters
+    parser.add_argument('--transformer-impl',
+                        choices=('custom', 'pytorch'),
+                        default='custom')
     parser.add_argument('--dec-embed-dim', default=512)
     parser.add_argument('--dec-ffn-dim', default=1024)
     parser.add_argument('--dec-num-heads', default=4)
