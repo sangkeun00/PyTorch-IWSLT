@@ -36,8 +36,8 @@ class TransformerTest(unittest.TestCase):
     def test_runnable(self):
         self.model.reset_parameters()
         dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
-        for src_tokens, src_lengths, tgt_tokens, tgt_lengths in dl:
-            self.model.forward(src_tokens, src_lengths, tgt_tokens,
+        for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
+            self.model.forward(src_tokens, src_lengths, tgt_inputs,
                                tgt_lengths)
 
     def test_can_converge(self):
@@ -45,12 +45,11 @@ class TransformerTest(unittest.TestCase):
         dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
         opt = torch.optim.Adam(self.model.parameters(), lr=0.001)
         for _ in range(15):
-            for src_tokens, src_lengths, tgt_tokens, tgt_lengths in dl:
+            for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
                 opt.zero_grad()
                 outputs = self.model.forward(src_tokens, src_lengths,
-                                             tgt_tokens, tgt_lengths)
-                nll = utils.masked_nll(outputs[:, :-1, :], tgt_lengths - 1,
-                                       tgt_tokens[:, 1:])
+                                             tgt_inputs, tgt_lengths)
+                nll = utils.masked_nll(outputs, tgt_lengths, tgt_outputs)
                 nll.backward()
                 opt.step()
         final_nll = nll.cpu().item()
