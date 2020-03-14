@@ -84,9 +84,10 @@ class SingleDataset(Dataset):
         self.vocab_tgt = vocab_tgt
         self.attach_ends = attach_ends
         sents_src = []
+        src_max_len = -1
         for sent in load_sents(path_src):
             sent = vocab_src.encode_sent(sent, attach_ends=False)
-
+            src_max_len = max(src_max_len, len(sent))
             sents_src.append(sent)
         sents_tgt = []
         for sent in load_sents(path_tgt):
@@ -94,12 +95,17 @@ class SingleDataset(Dataset):
 
             sents_tgt.append(sent)
 
+        for i in range(len(sents_src)):
+            sents_src[i] = sents_src[i] + [0] * (src_max_len - len(sents_src[i]))
+
         self.sents_src = sents_src
         self.sents_tgt = sents_tgt
         assert len(self.sents_src) == len(self.sents_tgt)
 
     def __getitem__(self, index):
-        return self.sents_src[index], self.sents_tgt[index]
+        src = torch.tensor(self.sents_src[index], dtype=torch.long)
+        tgt = torch.tensor(self.sents_tgt[index], dtype=torch.long)
+        return src, tgt
 
     def __len__(self):
         return len(self.sents_src)
@@ -208,6 +214,42 @@ def yield_to_device(generator, device):
         yield to_device(x, device)
 
 
+class LenMatchBatchSampler(torch.utils.data.BatchSampler):
+    def __iter__(self):
+
+        buckets = [[]] * 100
+        yielded = 0
+
+        for idx in self.sampler:
+            num_pads = torch.sum(self.sampler.data_source[idx][0] == 0)
+            num_pads = int(num_pads / 3)
+            if len(buckets[num_pads]) == 0:
+                buckets[num_pads] = []
+            buckets[num_pads].append(idx)
+
+            if len(buckets[num_pads]) == self.batch_size:
+                batch = list(buckets[num_pads])
+                yield batch
+                yielded += 1
+                buckets[num_pads] = []
+
+        batch = []
+        leftover = [idx for bucket in buckets for idx in bucket]
+
+        for idx in leftover:
+            batch.append(idx)
+            if len(batch) == self.batch_size:
+                yielded += 1
+                yield batch
+                batch = []
+
+        if len(batch) > 0 and not self.drop_last:
+            yielded += 1
+            yield batch
+
+        assert len(self) == yielded, "produced an incorrect number of batches."
+
+
 def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
     vocab_src = dset.vocab_src
     vocab_tgt = dset.vocab_tgt
@@ -218,21 +260,47 @@ def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
         length = np.array([len(item) for item in batch])
         max_length = length.max()
 
-        data = np.array([(item + [pad_id] * (max_length - len(item)))
-                         for item in batch])
-        data = torch.tensor(data, dtype=torch.long)
+        data = torch.zeros((len(batch), max_length), dtype=torch.long)
+        for i in range(len(batch)):
+            data[i, :len(batch[i])] = batch[i]
+        # data = np.array([(item + [pad_id] * (max_length - len(item)))
+        #                  for item in batch])
+        # data = torch.tensor(data, dtype=torch.long)
         length = torch.tensor(length, dtype=torch.long)
         return data, length
 
+    def pack_seqs(batch):
+        lengths = np.array([torch.sum((b != 0)).item() for b in batch])
+        max_len = lengths.max()
+        data = torch.zeros((len(batch), max_len), dtype=torch.long)
+        for i in range(len(batch)):
+            data[i] = batch[i][:max_len]
+        lengths = torch.tensor(lengths, dtype=torch.long)
+        return data, lengths
+
+
     def my_collate(batch):
-        src_seqs, src_lengths = pad_seqs([item[0] for item in batch])
+        src_seqs, src_lengths = pack_seqs([item[0] for item in batch])
         tgt_seqs, tgt_lengths = pad_seqs([item[1] for item in batch])
         return [src_seqs, src_lengths, tgt_seqs, tgt_lengths]
 
+    ran_sampler = torch.utils.data.RandomSampler(dset)
+    len_sampler = LenMatchBatchSampler(ran_sampler, batch_size=batch_size,
+                                       drop_last=False)
+
+    dataloader = DataLoader(dset,
+                            #batch_size=batch_size,
+                            #shuffle=shuffle,
+                            num_workers=num_workers,
+                            collate_fn=my_collate,
+                            batch_sampler=len_sampler,
+                            pin_memory=True)
+    """
     dataloader = DataLoader(dset,
                             batch_size=batch_size,
                             shuffle=shuffle,
                             num_workers=num_workers,
                             collate_fn=my_collate,
                             pin_memory=True)
+    """
     return dataloader
