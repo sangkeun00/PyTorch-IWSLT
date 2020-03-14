@@ -163,6 +163,8 @@ class TransformerDecoder(nn.Module):
     def reset_parameters(self):
         nn.init.normal_(self.embedding.weight,
                         mean=0, std=1/self.embed_scale)
+        nn.init.normal_(self.out_linear.weight,
+                        mean=0, std=1/self.embed_scale)
 
     def forward(self, encoder_out, src_lengths, tgt_tokens, tgt_lengths):
         x = self.embedding(tgt_tokens) * self.embed_scale
