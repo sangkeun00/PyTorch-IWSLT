@@ -23,17 +23,15 @@ class Seq2SegModel(pl.LightningModule):
         return self.model(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
 
     def training_step(self, batch, batch_nb):
-        src_tokens, src_lengths, tgt_tokens, tgt_lengths = batch
-        logits = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
-        loss = models.utils.masked_nll(logits[:, :-1, :], tgt_lengths - 1,
-                                       tgt_tokens[:, 1:])
+        src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
+        logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
+        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
         return {'loss': loss}
 
     def validation_step(self, batch, batch_nb):
-        src_tokens, src_lengths, tgt_tokens, tgt_lengths = batch
-        logits = self.forward(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
-        loss = models.utils.masked_nll(logits[:, :-1, :], tgt_lengths - 1,
-                                       tgt_tokens[:, 1:])
+        src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
+        logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
+        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
         return {'val_loss': loss}
 
     def validation_epoch_end(self, outputs):
