@@ -92,8 +92,9 @@ def main():
     trainer = pl.Trainer(
         precision=16 if args.fp16 else 32,
         max_epochs=args.max_epochs,
-        gpus=args.gpu,
+        gpus=args.gpus,
         amp_level='O1',
+        accumulate_grad_batches=2
     )
     trainer.fit(model)
 
@@ -122,8 +123,8 @@ def parse_args():
                         default='inverse_sqrt')
     parser.add_argument('--weight-decay', type=float, default=0.0001)
     parser.add_argument('--min-lr', type=float, default=1e-9)
-    parser.add_argument('--warmup-steps', type=int, default=4000)
-    parser.add_argument('--batch-size', type=int, default=55)
+    parser.add_argument('--warmup-steps', type=int, default=8000)
+    parser.add_argument('--batch-size', type=int, default=80)
     parser.add_argument('--label-smoothing', type=float, default=0.)
 
     # model parameters
