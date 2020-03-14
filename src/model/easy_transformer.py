@@ -2,12 +2,15 @@ import math
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .positional_embedding import PositionalEmbedding
 
 
 class EasyTransformer(nn.Module):
     def __init__(self, args, src_dict, tgt_dict):
+        super().__init__()
+
         self.args = args
         self.pad_id = src_dict.PAD_ID
 
@@ -21,7 +24,7 @@ class EasyTransformer(nn.Module):
             activation='relu',
         )
 
-        self.embed_scale = math.sqrt(args.embed_dim)
+        self.embed_scale = math.sqrt(args.enc_embed_dim)
         self.enc_embedding = nn.Embedding(len(src_dict), args.enc_embed_dim)
         self.dec_embedding = nn.Embedding(len(tgt_dict), args.dec_embed_dim)
         self.positional_embedding = PositionalEmbedding(args.enc_embed_dim)
@@ -44,10 +47,12 @@ class EasyTransformer(nn.Module):
 
         src = self.embed_scale * self.enc_embedding(src_tokens)
         src = src + self.positional_embedding(src)
+        src = F.dropout(src, p=0.1, training=self.training)
         src = src * src_mask
 
         tgt = self.embed_scale * self.dec_embedding(tgt_tokens)
         tgt = tgt + self.positional_embedding(tgt)
+        tgt = F.dropout(tgt, p=0.1, training=self.training)
         tgt = tgt * tgt_mask
 
         return src, tgt
@@ -56,14 +61,16 @@ class EasyTransformer(nn.Module):
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
         src, tgt = self.forward_embedding(src_tokens, tgt_tokens)
 
-        # TODO
-        # Maybe src(tgt)_mask = self.transformer.generate_square_subsequent_mask(src(tgt_lengths))
-        src_mask = None
-        tgt_mask = None
-        memory_mask = None
-        src_key_padding_mask = None
-        tgt_key_padding_mask = None
-        memory_key_padding_mask = None
+        src_mask = None                                 # Should be None
+        tgt_mask = self.generate_tgt_mask(tgt_tokens)   # Need to check
+        memory_mask = None                              # Need to check
+        src_key_padding_mask = (src_tokens == self.pad_id)     # Need to check
+        tgt_key_padding_mask = (tgt_tokens == self.pad_id)     # Need to check
+        memory_key_padding_mask = src_key_padding_mask.clone() # Need to check
+
+
+        src = src.transpose(0, 1)
+        tgt = tgt.transpose(0, 1)
 
         out = self.transformer.forward(
             src=src,
@@ -76,6 +83,14 @@ class EasyTransformer(nn.Module):
             memory_key_padding_mask=memory_key_padding_mask,
         )
 
+        out = out.transpose(0, 1)
         out = self.out(out)
 
         return out
+
+    def generate_tgt_mask(self, tgt_tokens):
+        sz = tgt_tokens.shape[1]
+        mask = torch.triu(torch.ones(sz, sz)) == 1
+        mask = mask.transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask.to(tgt_tokens.device)
