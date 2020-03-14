@@ -255,6 +255,8 @@ def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
     vocab_tgt = dset.vocab_tgt
     assert vocab_src.PAD_ID == vocab_tgt.PAD_ID
     pad_id = vocab_src.PAD_ID
+    # assume pad_id = 0 in this implementation
+    assert pad_id == 0
 
     def pad_seqs(batch):
         length = np.array([len(item) - 1 for item in batch])
@@ -265,14 +267,11 @@ def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
         for i in range(len(batch)):
             data[i, :len(batch[i]) - 1] = batch[i][:-1]
             data2[i, :len(batch[i]) - 1] = batch[i][1:]
-        # data = np.array([(item + [pad_id] * (max_length - len(item)))
-        #                  for item in batch])
-        # data = torch.tensor(data, dtype=torch.long)
         length = torch.tensor(length, dtype=torch.long)
         return data, data2, length
 
     def pack_seqs(batch):
-        lengths = np.array([torch.sum((b != 0)).item() for b in batch])
+        lengths = np.array([torch.sum((b != pad_id)).item() for b in batch])
         max_len = lengths.max()
         data = torch.zeros((len(batch), max_len), dtype=torch.long)
         for i in range(len(batch)):
@@ -291,18 +290,8 @@ def get_dataloader(dset, batch_size, shuffle=True, num_workers=2):
                                        drop_last=False)
 
     dataloader = DataLoader(dset,
-                            #batch_size=batch_size,
-                            #shuffle=shuffle,
                             num_workers=num_workers,
                             collate_fn=my_collate,
                             batch_sampler=len_sampler,
                             pin_memory=True)
-    """
-    dataloader = DataLoader(dset,
-                            batch_size=batch_size,
-                            shuffle=shuffle,
-                            num_workers=num_workers,
-                            collate_fn=my_collate,
-                            pin_memory=True)
-    """
     return dataloader
