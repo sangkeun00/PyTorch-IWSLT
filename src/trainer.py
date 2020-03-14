@@ -56,10 +56,11 @@ class Seq2SegModel(pl.LightningModule):
         else:
             raise NotImplementedError()
         if self.args.decay_method == 'inverse_sqrt':
-            sch = lr_scheduler.InverseSqrtScheduler(
+            scheduler = lr_scheduler.InverseSqrtScheduler(
                 opt,
                 warmup_steps=self.args.warmup_steps,
                 min_lr=self.args.min_lr)
+            sch = {'scheduler': scheduler, 'interval': 'step'}
         else:
             raise NotImplementedError()
         return [opt], [sch]
