@@ -74,7 +74,7 @@ class Trainer(object):
             cum_tokens = 0
             self.optimizer.zero_grad()
             print("[Epoch {} (Train)]".format(epoch))
-            for idx, batch in enumerate(self.train_loader, start=1):
+            for idx, batch in enumerate(self.train_loader):
                 # Data loading
                 src = batch[0].to(self.device)
                 src_lens = batch[1].to(self.device)
@@ -96,7 +96,8 @@ class Trainer(object):
                 if (idx + 1) % self.args.gradient_accumulation == 0:
                     self.optimizer.step()
                     self.optimizer.zero_grad()
-                    self.scheduler.step()
+                    if self.scheduler is not None:
+                        self.scheduler.step()
 
                 # Logging
                 cur_loss = loss.item()
