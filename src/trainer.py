@@ -33,14 +33,14 @@ class Trainer(object):
             self.optimizer = torch.optim.Adam(
                 params=self.model.parameters(),
                 lr=args.learning_rate,
-                betas=(0.9, 0.997),
+                betas=args.betas,
                 weight_decay=args.weight_decay
             )
         elif args.optim == 'adamw':
             self.optimizer = torch.optim.AdamW(
                 params=self.model.parameters(),
                 lr=args.learning_rate,
-                betas=(0.9, 0.997),
+                betas=args.betas,
                 weight_decay=args.weight_decay
             )
         else:
@@ -177,12 +177,13 @@ def parse_args():
     parser.add_argument('--lang-src', default='en')
     parser.add_argument('--lang-tgt', default='de')
 
-    # training parameters
+    # optimization parameters
     parser.add_argument('--max-epochs', type=int, default=100)
     parser.add_argument('--learning-rate',
                         type=float,
                         default=5e-4,
                         help='learning rate')
+    parser.add_argument('--betas', nargs=2, default=(0.9, 0.997))
     parser.add_argument('--optim', choices=('adam', 'adamw'), default='adamw')
     parser.add_argument('--decay-method',
                         choices=('inverse_sqrt', 'cos'),
@@ -211,7 +212,7 @@ def parse_args():
     parser.add_argument('--dec-tied-weight', type=bool, default=True)
 
     parser.add_argument('--dropout', default=0.3)
-    parser.add_argument('--act-dropout', default=0.0)
+    parser.add_argument('--act-dropout', default=0.1)
     parser.add_argument('--attn-dropout', default=0.0)
     parser.add_argument('--embed-dropout', default=0.3)
 
