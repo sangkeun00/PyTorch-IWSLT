@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from ..model import utils
+from ..models import utils
 
 
 class UtilsTest(unittest.TestCase):

@@ -4,8 +4,8 @@ import time
 import torch
 import pytorch_lightning as pl
 import data_set
-import model as models
-import optim as optim
+import models
+import optim
 
 
 class Trainer(object):

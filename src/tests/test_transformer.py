@@ -5,9 +5,9 @@ import torch
 import torch.nn.functional as F
 
 from ..optim.lr_scheduler import InverseSqrtScheduler
-from ..model import transformer
-from ..model import easy_transformer
-from ..model import utils
+from ..models import transformer
+from ..models import easy_transformer
+from ..models import utils
 from .. import data_set
 
 

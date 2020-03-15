@@ -3,7 +3,7 @@ import argparse
 import torch
 import pytorch_lightning as pl
 import data_set
-import model as models
+import models
 import lr_scheduler
 
 
