@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from torch.nn import MultiheadAttention
 
-from .utils import create_causual_mask
+from ..utils import create_causual_mask
 
 
 class EncoderLayer(nn.Module):

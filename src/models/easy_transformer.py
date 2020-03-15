@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .positional_embedding import PositionalEmbedding
-from .utils import create_causual_mask
+from ..utils import create_causual_mask
 
 
 class EasyTransformer(nn.Module):
