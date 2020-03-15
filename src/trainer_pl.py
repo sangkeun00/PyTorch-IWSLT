@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import data_set
 import models
 import lr_scheduler
+import losses
 
 
 class Seq2SegModel(pl.LightningModule):
@@ -31,13 +32,13 @@ class Seq2SegModel(pl.LightningModule):
     def training_step(self, batch, batch_nb):
         src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
         logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
-        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
+        loss = losses.masked_nll(logits, tgt_lengths, tgt_outputs)
         return {'loss': loss}
 
     def validation_step(self, batch, batch_nb):
         src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
         logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
-        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
+        loss = losses.masked_nll(logits, tgt_lengths, tgt_outputs)
         return {'val_loss': loss}
 
     def validation_epoch_end(self, outputs):

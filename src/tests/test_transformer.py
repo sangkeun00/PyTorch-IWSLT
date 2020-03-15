@@ -2,12 +2,11 @@ import unittest
 from argparse import Namespace
 
 import torch
-import torch.nn.functional as F
 
 from ..optim.lr_scheduler import InverseSqrtScheduler
 from ..models import transformer
 from ..models import easy_transformer
-from ..models import utils
+from .. import losses
 from .. import data_set
 
 
@@ -57,7 +56,7 @@ class TransformerTest(unittest.TestCase):
                 opt.zero_grad()
                 outputs = model.forward(src_tokens, src_lengths, tgt_inputs,
                                         tgt_lengths)
-                nll = utils.masked_nll(outputs, tgt_lengths, tgt_outputs)
+                nll = losses.masked_nll(outputs, tgt_lengths, tgt_outputs)
                 nll.backward()
                 opt.step()
         final_nll = nll.cpu().item()
@@ -93,7 +92,7 @@ class TransformerTest(unittest.TestCase):
                 opt.zero_grad()
                 outputs = model.forward(src_tokens, src_lengths, tgt_inputs,
                                         tgt_lengths)
-                nll = utils.masked_nll(outputs, tgt_lengths, tgt_outputs)
+                nll = losses.masked_nll(outputs, tgt_lengths, tgt_outputs)
                 nll.backward()
                 opt.step()
                 sch.step()

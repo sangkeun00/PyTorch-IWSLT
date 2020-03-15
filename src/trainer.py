@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 import data_set
 import models
 import optim
+import losses
 
 
 class Trainer(object):
@@ -84,7 +85,7 @@ class Trainer(object):
 
                 # Loss calculation
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
-                loss = models.utils.masked_nll(
+                loss = losses.masked_nll(
                     logits=logits,
                     lengths=tgt_lens,
                     targets=tgt_out,
@@ -133,7 +134,7 @@ class Trainer(object):
             # Loss calculation
             with torch.no_grad():
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
-                loss = models.utils.masked_nll(logits, tgt_lens, tgt_out)
+                loss = losses.masked_nll(logits, tgt_lens, tgt_out)
 
             # Logging
             cur_loss = loss.item()
