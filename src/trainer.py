@@ -106,7 +106,7 @@ class Trainer(object):
                 avg_loss = cum_loss / cum_tokens
                 avg_ppl = 2 ** avg_loss
                 print(("\r[Step {}/{}] Batch Loss: {:.4f}, "
-                       "Avg Loss: {:.4f}, ppl: {:.4f}").format(
+                       "Avg Loss: {:.4f}, Avg Perplexity: {:.4f}").format(
                           idx,
                           len(self.train_loader),
                           cur_loss,
@@ -148,6 +148,7 @@ class Trainer(object):
 
 def main():
     args = parse_args()
+    print(str(args))
 
     # initialize dataset
     data_splits = data_set.SplittedDataset(args.data_dir,
