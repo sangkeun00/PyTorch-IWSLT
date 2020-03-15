@@ -68,6 +68,7 @@ class Trainer(object):
         for epoch in range(self.args.max_epochs):
             cum_loss = 0
             cum_tokens = 0
+            self.optimizer.zero_grad()
             print("[Epoch {} (Train)]".format(epoch))
             for idx, batch in enumerate(self.train_loader, start=1):
                 # Data loading
@@ -82,11 +83,10 @@ class Trainer(object):
                 loss = models.utils.masked_nll(logits, tgt_lens, tgt_out)
 
                 # Optimizer update
-                if idx % self.args.gradient_accumulation == 0:
-                    self.optimizer.zero_grad()
                 loss.backward()
-                if idx % self.args.gradient_accumulation == 0:
+                if (idx + 1) % self.args.gradient_accumulation == 0:
                     self.optimizer.step()
+                    self.optimizer.zero_grad()
                     self.scheduler.step()
 
                 # Logging
@@ -94,12 +94,15 @@ class Trainer(object):
                 cur_tokens = torch.sum(tgt_lens).cpu().item()
                 cum_loss += cur_loss * cur_tokens
                 cum_tokens += cur_tokens
+                avg_loss = cum_loss / cum_tokens
+                avg_ppl = 2 ** avg_loss
                 print(("\r[Step {}/{}] Batch Loss: {:.4f}, "
-                      "Avg Loss: {:.4f}").format(
+                       "Avg Loss: {:.4f}, ppl: {:.4f}").format(
                           idx,
                           len(self.train_loader),
                           cur_loss,
-                          cum_loss / cum_tokens),
+                          avg_loss,
+                          avg_ppl),
                       end="")
 
             print("\n[Epoch {} (Validation)]".format(epoch))
