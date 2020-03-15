@@ -1,85 +1,145 @@
 import argparse
+import time
 
 import torch
 import pytorch_lightning as pl
 import data_set
 import model as models
-import lr_scheduler
+import optim as optim
 
 
-class Seq2SegModel(pl.LightningModule):
-    def __init__(self, args, data_splits):
-        super().__init__()
+class Trainer(object):
+    def __init__(self, args, data_splits, device):
+
         self.args = args
-        self.learning_rate = args.learning_rate
-        self.weight_decay = args.weight_decay
         self.data_splits = data_splits
+        self.device = device
+
         if args.transformer_impl == 'pytorch':
             self.model = models.easy_transformer.EasyTransformer(
                 args,
                 src_dict=data_splits.vocab_src,
-                tgt_dict=data_splits.vocab_tgt)
+                tgt_dict=data_splits.vocab_tgt,
+            ).to(device)
         elif args.transformer_impl == 'custom':
             self.model = models.transformer.Transformer(
                 args,
                 src_dict=data_splits.vocab_src,
-                tgt_dict=data_splits.vocab_tgt)
+                tgt_dict=data_splits.vocab_tgt,
+            ).to(device)
 
-    def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
-        return self.model(src_tokens, src_lengths, tgt_tokens, tgt_lengths)
-
-    def training_step(self, batch, batch_nb):
-        src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
-        logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
-        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
-        return {'loss': loss}
-
-    def validation_step(self, batch, batch_nb):
-        src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths = batch
-        logits = self.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
-        loss = models.utils.masked_nll(logits, tgt_lengths, tgt_outputs)
-        return {'val_loss': loss}
-
-    def validation_epoch_end(self, outputs):
-        val_losses = [item['val_loss'] for item in outputs]
-        return {'val_loss': torch.stack(val_losses).mean()}
-
-    def configure_optimizers(self):
-        if self.args.optim == 'adam':
-            opt = torch.optim.Adam(self.model.parameters(),
-                                   lr=self.learning_rate,
-                                   betas=(0.9, 0.997),
-                                   weight_decay=self.weight_decay)
-        elif self.args.optim == 'adamw':
-            opt = torch.optim.AdamW(self.model.parameters(),
-                                    lr=self.learning_rate,
-                                    betas=(0.9, 0.997),
-                                    weight_decay=self.weight_decay)
+        if args.optim == 'adam':
+            self.optimizer = torch.optim.Adam(self.model.parameters(),
+                                              lr=args.learning_rate,
+                                              betas=(0.9, 0.997),
+                                              weight_decay=args.weight_decay)
+        elif args.optim == 'adamw':
+            self.optimizer = torch.optim.AdamW(self.model.parameters(),
+                                               lr=args.learning_rate,
+                                               betas=(0.9, 0.997),
+                                               weight_decay=args.weight_decay)
         else:
-            raise NotImplementedError()
-        if self.args.decay_method == 'inverse_sqrt':
-            scheduler = lr_scheduler.InverseSqrtScheduler(
-                opt,
-                warmup_steps=self.args.warmup_steps,
-                min_lr=self.args.min_lr)
-            sch = {'scheduler': scheduler, 'interval': 'step'}
+            raise ValueError
+
+        self.scheduler = None
+        if args.decay_method == 'inverse_sqrt':
+            self.scheduler = optim.lr_scheduler.InverseSqrtScheduler(
+                self.optimizer,
+                warmup_steps=args.warmup_steps,
+                min_lr=args.min_lr
+            )
         else:
-            raise NotImplementedError()
-        return [opt], [sch]
+            raise ValueError
 
-    def train_dataloader(self):
-        return data_set.get_dataloader(self.data_splits['trn'],
-                                       batch_size=self.args.batch_size)
+        self.train_loader = data_set.get_dataloader(
+            dset=data_splits['trn'],
+            batch_size=args.batch_size
+        )
+        self.val_loader = data_set.get_dataloader(
+            dset=data_splits['val'],
+            batch_size=args.batch_size
+        )
+        self.test_loader = data_set.get_dataloader(
+            dset=data_splits['tst'],
+            batch_size=args.batch_size
+        )
 
-    def val_dataloader(self):
-        return data_set.get_dataloader(self.data_splits['val'],
-                                       batch_size=self.args.batch_size,
-                                       shuffle=False)
+    def train(self):
+        for epoch in range(self.args.max_epochs):
+            cum_loss = 0
+            cum_tokens = 0
+            self.optimizer.zero_grad()
+            print("[Epoch {} (Train)]".format(epoch))
+            for idx, batch in enumerate(self.train_loader, start=1):
+                # Data loading
+                src = batch[0].to(self.device)
+                src_lens = batch[1].to(self.device)
+                tgt_in = batch[2].to(self.device)
+                tgt_out = batch[3].to(self.device)
+                tgt_lens = batch[4].to(self.device)
 
-    def test_dataloader(self):
-        return data_set.get_dataloader(self.data_splits['tst'],
-                                       batch_size=self.args.batch_size,
-                                       shuffle=False)
+                # Loss calculation
+                logits = self.model(src, src_lens, tgt_in, tgt_lens)
+                loss = models.utils.masked_nll(
+                    logits=logits,
+                    lengths=tgt_lens,
+                    targets=tgt_out,
+                    label_smoothing=self.args.label_smoothing,
+                )
+
+                # Optimizer update
+                loss.backward()
+                if (idx + 1) % self.args.gradient_accumulation == 0:
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
+                    self.scheduler.step()
+
+                # Logging
+                cur_loss = loss.item()
+                cur_tokens = torch.sum(tgt_lens).cpu().item()
+                cum_loss += cur_loss * cur_tokens
+                cum_tokens += cur_tokens
+                avg_loss = cum_loss / cum_tokens
+                avg_ppl = 2 ** avg_loss
+                print(("\r[Step {}/{}] Batch Loss: {:.4f}, "
+                       "Avg Loss: {:.4f}, ppl: {:.4f}").format(
+                          idx,
+                          len(self.train_loader),
+                          cur_loss,
+                          avg_loss,
+                          avg_ppl),
+                      end="")
+
+            print("\n[Epoch {} (Validation)]".format(epoch))
+            val_loss = self.validation()
+            print("Validation Loss: {:.4f}".format(val_loss))
+
+    def validation(self):
+        cum_loss = 0
+        cum_tokens = 0
+        for batch in self.val_loader:
+            # Data loading
+            src = batch[0].to(self.device)
+            src_lens = batch[1].to(self.device)
+            tgt_in = batch[2].to(self.device)
+            tgt_out = batch[3].to(self.device)
+            tgt_lens = batch[4].to(self.device)
+
+            # Loss calculation
+            with torch.no_grad():
+                logits = self.model(src, src_lens, tgt_in, tgt_lens)
+                loss = models.utils.masked_nll(logits, tgt_lens, tgt_out)
+
+            # Logging
+            cur_loss = loss.item()
+            cur_tokens = torch.sum(tgt_lens).cpu().item()
+            cum_loss += cur_loss * cur_tokens
+            cum_tokens += cur_tokens
+
+        return cum_loss / cum_tokens
+
+    def test(self):
+        pass
 
 
 def main():
@@ -91,22 +151,18 @@ def main():
                                            lang_tgt=args.lang_tgt,
                                            lowercase=args.lowercase)
 
-    # initialize model
-    model = Seq2SegModel(args, data_splits=data_splits)
-
-    trainer = pl.Trainer(precision=16 if args.fp16 else 32,
-                         max_epochs=args.max_epochs,
-                         gpus=args.gpus,
-                         amp_level='O1',
-                         accumulate_grad_batches=2)
-    trainer.fit(model)
+    cuda_device = "cuda:{}".format(args.gpu)
+    device = torch.device(cuda_device if torch.cuda.is_available() else "cpu")
+    # initialize trainer
+    trainer = Trainer(args, data_splits, device)
+    trainer.train()
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment parameters
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
-    parser.add_argument('--gpus', type=int, nargs='+')
+    parser.add_argument('--gpu', type=int, default=0)
 
     # data parameters
     parser.add_argument('--lowercase', action='store_true')
@@ -129,6 +185,7 @@ def parse_args():
     parser.add_argument('--warmup-steps', type=int, default=8000)
     parser.add_argument('--batch-size', type=int, default=80)
     parser.add_argument('--label-smoothing', type=float, default=0.)
+    parser.add_argument('--gradient-accumulation', type=int, default=2)
 
     # model parameters
     parser.add_argument('--transformer-impl',
