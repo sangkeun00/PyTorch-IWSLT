@@ -214,6 +214,7 @@ def parse_args():
     # environment parameters
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
     parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--eval', action='store_true', help='Test mode')
 
     # data parameters
     parser.add_argument('--lowercase', action='store_true')
@@ -259,6 +260,9 @@ def parse_args():
     parser.add_argument('--act-dropout', default=0.1)
     parser.add_argument('--attn-dropout', default=0.0)
     parser.add_argument('--embed-dropout', default=0.3)
+
+    # Logging parameters
+    parser.add_argument('--save-path', type=str, default='./save')
 
     return parser.parse_args()
 
