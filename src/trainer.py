@@ -49,12 +49,13 @@ class Trainer(object):
 
         if args.fp16:
             self.model.half()
+            use_adamw = True if args.optim == 'adamw' else False
             self.optimizer = optim.adam.Adam16(
                 params=self.model.parameters(),
                 lr=args.learning_rate,
                 betas=args.betas,
                 weight_decay=args.weight_decay,
-                adamw=True if args.optim == 'adamw' else False,
+                adamw=use_adamw,
                 scheduler=args.decay_method,
                 min_lr=args.min_lr,
                 warmup_steps=args.warmup_steps,
@@ -130,7 +131,7 @@ class Trainer(object):
                 avg_ppl = 2 ** avg_loss
                 print(("\r[Step {}/{}] Batch Loss: {:.4f}, "
                        "Avg Loss: {:.4f}, Avg Perplexity: {:.4f}").format(
-                          idx,
+                          idx + 1,
                           len(self.train_loader),
                           cur_loss,
                           avg_loss,
