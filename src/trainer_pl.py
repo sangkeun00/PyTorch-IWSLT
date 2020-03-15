@@ -2,10 +2,10 @@ import argparse
 
 import torch
 import pytorch_lightning as pl
-import data_set
-import models
-import lr_scheduler
-import losses
+from . import data_set
+from . import models
+from . import lr_scheduler
+from . import losses
 
 
 class Seq2SegModel(pl.LightningModule):
