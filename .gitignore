@@ -6,5 +6,6 @@ __pycache__/
 # prevent committing downloaded data
 scripts/gdrive.sh
 /data/
+save/
 /test_data/single/vocab.bpe.*
 lightning_logs/

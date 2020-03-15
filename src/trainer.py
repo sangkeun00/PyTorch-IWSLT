@@ -90,6 +90,7 @@ class Trainer(object):
         )
 
     def train(self):
+        best_ppl = 1e9
         for epoch in range(1, self.args.max_epochs + 1):
             cum_loss = 0
             cum_nll = 0
@@ -150,7 +151,14 @@ class Trainer(object):
             print('-' * 50)
             print("Epoch {} ::: Validation".format(epoch))
             val_loss, val_ppl = self.validation()
-            print("nll loss: {:.3f}, ppl: {:.3f}".format(val_loss, val_ppl))
+            best_ppl = min(best_ppl, val_ppl)
+            print(("nll loss: {:.3f}, ppl: {:.3f}, "
+                   "best ppl: {:.3f}").format(val_loss, val_ppl, best_ppl))
+
+            self.save(self.args.save_path, epoch)
+            if val_ppl == best_ppl:
+                print("[*] Best model is changed!")
+                self.save(self.args.save_path, verbose=False)
 
     def validation(self):
         cum_loss = 0
@@ -182,7 +190,7 @@ class Trainer(object):
     def test(self):
         pass
 
-    def save(self, path, epoch=None):
+    def save(self, path, epoch=None, verbose=True):
         os.makedirs(path, exist_ok=True)
         if epoch is not None:
             save_path = os.path.join(path, 'model{}.pth'.format(epoch))
@@ -192,7 +200,8 @@ class Trainer(object):
         self.model.float() # Convert model to fp32
         torch.save(self.model.state_dict(), save_path)
 
-        print("[*] Model is saved in '{}'...".format(save_path))
+        if verbose:
+            print("[*] Model is saved in '{}'.".format(save_path))
 
     def load(self, path):
         self.model.float()

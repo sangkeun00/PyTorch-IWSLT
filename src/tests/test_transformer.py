@@ -56,7 +56,7 @@ class TransformerTest(unittest.TestCase):
                 opt.zero_grad()
                 outputs = model.forward(src_tokens, src_lengths, tgt_inputs,
                                         tgt_lengths)
-                nll = losses.masked_nll(outputs, tgt_lengths, tgt_outputs)
+                nll, _ = losses.masked_nll(outputs, tgt_lengths, tgt_outputs)
                 nll.backward()
                 opt.step()
         final_nll = nll.cpu().item()
