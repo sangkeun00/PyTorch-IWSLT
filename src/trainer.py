@@ -2,7 +2,8 @@ import argparse
 import time
 
 import torch
-import pytorch_lightning as pl
+from apex.fp16_utils import FP16_Optimizer
+
 from . import data_set
 from . import models
 from . import optim
@@ -46,15 +47,32 @@ class Trainer(object):
         else:
             raise ValueError
 
+        if args.fp16:
+            self.model.half()
+            self.optimizer = optim.adam.Adam16(
+                params=self.model.parameters(),
+                lr=args.learning_rate,
+                betas=args.betas,
+                weight_decay=args.weight_decay,
+                adamw=True if args.optim == 'adamw' else False,
+                scheduler=args.decay_method,
+                min_lr=args.min_lr,
+                warmup_steps=args.warmup_steps,
+            )
+            self.optimizer = FP16_Optimizer(
+                self.optimizer,
+                static_loss_scale=1,
+                dynamic_loss_scale=True,
+                verbose=False
+            )
+
         self.scheduler = None
-        if args.decay_method == 'inverse_sqrt':
+        if args.decay_method == 'inverse_sqrt' and not args.fp16:
             self.scheduler = optim.lr_scheduler.InverseSqrtScheduler(
                 self.optimizer,
                 warmup_steps=args.warmup_steps,
                 min_lr=args.min_lr
             )
-        else:
-            raise ValueError
 
         self.train_loader = data_set.get_dataloader(
             dset=data_splits['trn'],
@@ -93,7 +111,10 @@ class Trainer(object):
                 )
 
                 # Optimizer update
-                loss.backward()
+                if not self.args.fp16:
+                    loss.backward()
+                else:
+                    self.optimizer.backward(loss)
                 if (idx + 1) % self.args.gradient_accumulation == 0:
                     self.optimizer.step()
                     self.optimizer.zero_grad()
