@@ -3,10 +3,10 @@ import time
 
 import torch
 import pytorch_lightning as pl
-import data_set
-import models
-import optim
-import losses
+from . import data_set
+from . import models
+from . import optim
+from . import losses
 
 
 class Trainer(object):
