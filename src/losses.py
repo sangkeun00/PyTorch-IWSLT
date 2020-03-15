@@ -18,9 +18,9 @@ def masked_nll(logits, lengths, targets, label_smoothing=0.0, pad_id=0):
     inp_q = 1. - mask
     nll = -(log_probs * tgt_one_hots).sum(dim=-1)
 
-    if label_smoothing > 0.:
-        loss = (nll * (1 - label_smoothing) -
-                log_probs.mean(dim=-1) * label_smoothing)
-        return (inp_q * loss).sum() / inp_q.sum()
-    else:
-        return (inp_q * nll).sum() / inp_q.sum()
+    loss = (nll * (1 - label_smoothing) -
+            log_probs.mean(dim=-1) * label_smoothing)
+    tot_loss = (inp_q * loss).sum() / inp_q.sum()
+    nll_loss = (inp_q * nll).sum() / inp_q.sum()
+
+    return tot_loss, nll_loss.item()

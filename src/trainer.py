@@ -90,11 +90,14 @@ class Trainer(object):
         )
 
     def train(self):
-        for epoch in range(self.args.max_epochs):
+        for epoch in range(1, self.args.max_epochs + 1):
             cum_loss = 0
+            cum_nll = 0
             cum_tokens = 0
+            begin_time = time.time()
             self.optimizer.zero_grad()
-            print("[Epoch {} (Train)]".format(epoch))
+            print("=" * os.get_terminal_size()[0])
+            print("Epoch {} ::: Train".format(epoch))
             for idx, batch in enumerate(self.train_loader):
                 # Data loading
                 src = batch[0].to(self.device)
@@ -105,7 +108,7 @@ class Trainer(object):
 
                 # Loss calculation
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
-                loss = losses.masked_nll(
+                loss, nll = losses.masked_nll(
                     logits=logits,
                     lengths=tgt_lens,
                     targets=tgt_out,
@@ -127,21 +130,27 @@ class Trainer(object):
                 cur_loss = loss.item()
                 cur_tokens = torch.sum(tgt_lens).cpu().item()
                 cum_loss += cur_loss * cur_tokens
+                cum_nll += nll * cur_tokens
                 cum_tokens += cur_tokens
                 avg_loss = cum_loss / cum_tokens
-                avg_ppl = 2 ** avg_loss
-                print(("\r[Step {}/{}] Batch Loss: {:.4f}, "
-                       "Avg Loss: {:.4f}, Avg Perplexity: {:.4f}").format(
+                avg_nll = cum_nll / cum_tokens
+                avg_ppl = 2 ** avg_nll
+                cur_time = time.time()
+                print(("\r[step {:4d}/{}] loss: {:.3f}, "
+                       "nll loss: {:.3f}, ppl: {:.3f}, time: {:.1f}s").format(
                           idx + 1,
                           len(self.train_loader),
-                          cur_loss,
                           avg_loss,
-                          avg_ppl),
+                          avg_nll,
+                          avg_ppl,
+                          cur_time - begin_time),
                       end="")
 
-            print("\n[Epoch {} (Validation)]".format(epoch))
-            val_loss = self.validation()
-            print("Validation Loss: {:.4f}".format(val_loss))
+            print()
+            print('-' * 50)
+            print("Epoch {} ::: Validation".format(epoch))
+            val_loss, val_ppl = self.validation()
+            print("nll loss: {:.3f}, ppl: {:.3f}".format(val_loss, val_ppl))
 
     def validation(self):
         cum_loss = 0
@@ -157,15 +166,18 @@ class Trainer(object):
             # Loss calculation
             with torch.no_grad():
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
-                loss = losses.masked_nll(logits, tgt_lens, tgt_out)
+                _, nll = losses.masked_nll(logits, tgt_lens, tgt_out)
 
             # Logging
-            cur_loss = loss.item()
+            cur_loss = nll
             cur_tokens = torch.sum(tgt_lens).cpu().item()
             cum_loss += cur_loss * cur_tokens
             cum_tokens += cur_tokens
 
-        return cum_loss / cum_tokens
+        nll_loss = cum_loss / cum_tokens
+        ppl = 2 ** nll_loss
+
+        return nll_loss, ppl
 
     def test(self):
         pass
@@ -223,7 +235,7 @@ def parse_args():
     parser.add_argument('--lang-tgt', default='de')
 
     # optimization parameters
-    parser.add_argument('--max-epochs', type=int, default=100)
+    parser.add_argument('--max-epochs', type=int, default=30)
     parser.add_argument('--learning-rate',
                         type=float,
                         default=5e-4,
@@ -262,7 +274,7 @@ def parse_args():
     parser.add_argument('--embed-dropout', default=0.3)
 
     # Logging parameters
-    parser.add_argument('--save-path', type=str, default='./save')
+    parser.add_argument('--save-path', type=str, default='./save/')
 
     return parser.parse_args()
 
