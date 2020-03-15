@@ -30,7 +30,8 @@ class Transformer(nn.Module):
             attn_dropout=args.attn_dropout,
             act_dropout=args.act_dropout,
             embed_dropout=args.embed_dropout,
-            dropout=args.dropout)
+            dropout=args.dropout
+        )
 
         self.decoder = TransformerDecoder(
             dec_embed_dim=args.dec_embed_dim,
@@ -42,7 +43,9 @@ class Transformer(nn.Module):
             attn_dropout=args.attn_dropout,
             act_dropout=args.act_dropout,
             embed_dropout=args.embed_dropout,
-            dropout=args.dropout)
+            dropout=args.dropout,
+            tied_weight=args.dec_tied_weight,
+        )
 
     def forward(self, src_tokens, src_lengths, tgt_tokens, tgt_lengths):
 

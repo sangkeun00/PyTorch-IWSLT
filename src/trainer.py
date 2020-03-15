@@ -17,27 +17,31 @@ class Trainer(object):
 
         if args.transformer_impl == 'pytorch':
             self.model = models.easy_transformer.EasyTransformer(
-                args,
+                args=args,
                 src_dict=data_splits.vocab_src,
                 tgt_dict=data_splits.vocab_tgt,
             ).to(device)
         elif args.transformer_impl == 'custom':
             self.model = models.transformer.Transformer(
-                args,
+                args=args,
                 src_dict=data_splits.vocab_src,
                 tgt_dict=data_splits.vocab_tgt,
             ).to(device)
 
         if args.optim == 'adam':
-            self.optimizer = torch.optim.Adam(self.model.parameters(),
-                                              lr=args.learning_rate,
-                                              betas=(0.9, 0.997),
-                                              weight_decay=args.weight_decay)
+            self.optimizer = torch.optim.Adam(
+                params=self.model.parameters(),
+                lr=args.learning_rate,
+                betas=(0.9, 0.997),
+                weight_decay=args.weight_decay
+            )
         elif args.optim == 'adamw':
-            self.optimizer = torch.optim.AdamW(self.model.parameters(),
-                                               lr=args.learning_rate,
-                                               betas=(0.9, 0.997),
-                                               weight_decay=args.weight_decay)
+            self.optimizer = torch.optim.AdamW(
+                params=self.model.parameters(),
+                lr=args.learning_rate,
+                betas=(0.9, 0.997),
+                weight_decay=args.weight_decay
+            )
         else:
             raise ValueError
 
@@ -201,6 +205,7 @@ def parse_args():
     parser.add_argument('--enc-num-heads', default=4)
     parser.add_argument('--enc-num-layers', default=6)
     parser.add_argument('--enc-layernorm-before', action='store_true')
+    parser.add_argument('--dec-tied-weight', type=bool, default=True)
 
     parser.add_argument('--dropout', default=0.3)
     parser.add_argument('--act-dropout', default=0.0)
