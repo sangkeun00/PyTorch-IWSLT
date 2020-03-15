@@ -200,6 +200,9 @@ class Trainer(object):
         self.model.float() # Convert model to fp32
         torch.save(self.model.state_dict(), save_path)
 
+        if self.args.fp16:
+            self.model.half()
+
         if verbose:
             print("[*] Model is saved in '{}'.".format(save_path))
 
