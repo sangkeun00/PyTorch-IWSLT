@@ -11,7 +11,6 @@ conda activate nn4nlp-hw3
 ```
 
 We train/test our model on the IWSLT en-de dataset, as it allows fast experiments due to its small dataset size.
-
 To download and preprocess the IWSLT en-de dataset, please run the following script.
 
 ```bash
@@ -20,8 +19,7 @@ To download and preprocess the IWSLT en-de dataset, please run the following scr
 
 #### Half Precision (fp16) Training
 To allow faster training, please install [apex](https://github.com/NVIDIA/apex) from NVIDIA.
-
-The detailed description on installiation is provided in [https://github.com/NVIDIA/apex#quick-start](https://github.com/NVIDIA/apex#quick-start).
+The detailed description on its installation is provided in [https://github.com/NVIDIA/apex#quick-start](https://github.com/NVIDIA/apex#quick-start).
 
 ## Training
 ```
