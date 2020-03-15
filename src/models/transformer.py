@@ -9,6 +9,8 @@ from .positional_embedding import PositionalEmbedding
 from ..utils import create_causual_mask
 from ..utils import cache_states
 from ..utils import get_states
+from ..utils import expand_states
+from ..utils import select_states
 
 
 class Transformer(nn.Module):
@@ -116,6 +118,153 @@ class Transformer(nn.Module):
             if ended.all():
                 break
         decoded_outputs = torch.cat(decoded_outputs, dim=1)
+        return decoded_outputs
+
+    def beam_decode(self, src_tokens, beam_size=5, max_length=1000):
+        """beam_decode
+        Testing beam decoding possibilities
+
+        :param src_tokens:
+        :param max_length:
+        """
+        src_key_padding_mask = (src_tokens == self.pad_id)
+        bsz = src_tokens.size(0)
+        search_size = bsz * beam_size
+
+        encoder_out = self.encoder(
+            src_tokens,
+            src_key_padding_mask=src_key_padding_mask
+        )
+
+        # run once for intial outputs
+        cache = {}
+        device = src_tokens.device
+        tgt_prev_tokens = torch.full(
+                (bsz, 1),
+                self.start_id,
+                dtype=torch.long,
+                device=device)
+        decoder_out = self.decoder(
+                encoder_out,
+                tgt_prev_tokens,
+                src_key_padding_mask=src_key_padding_mask,
+                tgt_key_padding_mask=None,
+                tgt_mask=None,
+                cache=cache)
+        vocab_size = decoder_out.size(2)
+        # [B, 1, N]
+        decoder_logp = torch.log_softmax(decoder_out, dim=-1)
+        # note, we only support beam_size < vocab_size
+        tgt_prev_tokens = decoder_logp.argsort(
+                descending=True, dim=-1)[:, :, :beam_size]
+        head_logp = decoder_logp.gather(dim=-1, index=tgt_prev_tokens)
+        assert head_logp.size(0) == bsz
+        assert head_logp.size(1) == 1
+        assert head_logp.size(2) == beam_size
+
+        # convert to search_size
+        tgt_prev_tokens = tgt_prev_tokens.permute(0, 2, 1).reshape(
+                search_size, 1).contiguous()
+        head_logp = head_logp.view(search_size, 1)
+
+        # start beam search
+        expand_states(cache, beam_size=beam_size, dim=1)
+
+        # copy encoder_out for search_size
+        # [T, B, H] -> [T, SSZ, H]
+        assert encoder_out.size(1) == bsz
+        src_len, _, hid_size = encoder_out.size()
+        encoder_out = encoder_out.repeat_interleave(beam_size, dim=1)
+        assert src_key_padding_mask.size(1) == src_len
+        # [B, T] -> [SSZ, T]
+        src_key_padding_mask = src_key_padding_mask.repeat_interleave(
+                beam_size, dim=0)
+
+        decoded_outputs = tgt_prev_tokens
+        padded = torch.full(
+                (search_size, 1),
+                self.pad_id,
+                dtype=torch.long,
+                device=device)
+        ended = ((tgt_prev_tokens == self.end_id)
+                 | (tgt_prev_tokens == self.pad_id))
+        for _ in range(max_length-1):
+            # here, no need to explicitly set
+            # masking for tgt since no future tokens exist
+            decoder_out = self.decoder(
+                    encoder_out,
+                    tgt_prev_tokens,
+                    src_key_padding_mask=src_key_padding_mask,
+                    tgt_key_padding_mask=None,
+                    tgt_mask=None,
+                    cache=cache
+            )
+            assert decoder_out.size(1) == 1
+            # [SSZ, T, N]
+            decoder_logp = torch.log_softmax(decoder_out, dim=-1)
+            # zero out ended probs
+            decoder_logp *= (1. - ended.to(decoder_logp.dtype))[:, :, None]
+            # accum log probs
+            decoder_logp = decoder_logp + head_logp[:, :, None]
+            decoder_logp = decoder_logp.view(
+                    bsz, beam_size, 1, vocab_size).permute(0, 2, 1, 3)
+            # [B, 1, SSZ*V]
+            decoder_logp = decoder_logp.contiguous().view(
+                    bsz, 1, beam_size * vocab_size)
+            # [B, 1, K]
+            top_idx = decoder_logp.argsort(
+                    descending=True, dim=-1)[:, :, :beam_size]
+            # print('top_idx', top_idx)
+            # [B, 1, K]
+            top_logp = decoder_logp.gather(dim=-1, index=top_idx)
+            # print('top_logp initial', top_logp)
+            # [B, 1, K]
+            top_tokens = top_idx % vocab_size
+            # [B, 1, K]
+            top_prev_idx = top_idx // vocab_size
+            top_prev_idx += torch.arange(
+                    bsz,
+                    dtype=torch.long,
+                    device=device)[:, None, None] * beam_size
+            # convert to search shape
+            top_prev_idx = top_prev_idx.permute(0, 2, 1)
+            top_prev_idx = top_prev_idx.contiguous().view(search_size, 1)
+            # print('top_prev_idx', top_prev_idx, ended.size())
+            top_logp = top_logp.permute(0, 2, 1)
+            head_logp = top_logp.contiguous().view(search_size, 1)
+            # print('head_logp', head_logp)
+            top_tokens = top_tokens.permute(0, 2, 1)
+            top_tokens = top_tokens.contiguous().view(search_size, 1)
+            # zero out ended tokens
+            prev_ended = ended.gather(dim=0, index=top_prev_idx)
+            tgt_prev_tokens = ((1 - prev_ended.to(torch.long)) * top_tokens +
+                               prev_ended.to(torch.long) * padded)
+            t_size = decoded_outputs.size(1)
+            top_decoded_idx = top_prev_idx.repeat(1, t_size)
+            decoded_outputs = decoded_outputs.gather(dim=0,
+                                                     index=top_decoded_idx)
+            decoded_outputs = torch.cat(
+                    [decoded_outputs, tgt_prev_tokens], dim=1)
+            t_size = t_size + 1
+            top_cache_idx = top_prev_idx[None, :, :].repeat(
+                    t_size, 1, hid_size)
+            select_states(cache, top_cache_idx, dim=1)
+
+            ended = ((tgt_prev_tokens == self.end_id)
+                     | (tgt_prev_tokens == self.pad_id))
+            if ended.all():
+                break
+        # returns only top values
+        decoded_outputs = decoded_outputs.view(bsz, beam_size, -1)[:, 0, :]
+        decoded_outputs = decoded_outputs.contiguous()
+
+        # remove ending padding
+        while decoded_outputs.size(1) > 1:
+            if (decoded_outputs[:, -1] == self.pad_id).all():
+                decoded_outputs = decoded_outputs[:, :-1]
+            else:
+                break
+
         return decoded_outputs
 
     def reset_parameters(self):

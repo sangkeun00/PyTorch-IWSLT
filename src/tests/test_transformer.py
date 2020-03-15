@@ -69,7 +69,7 @@ class TransformerTest(unittest.TestCase):
     def test_can_converge(self):
         self.converge_check(self.model)
 
-    def test_decoded(self):
+    def test_greedy_decoded(self):
         # do not shuffle, alway use the same 4 instances
         # TODO: It seems the 5th instance is quite difficult
         # for the model (?), unsure if there is problem
@@ -99,6 +99,59 @@ class TransformerTest(unittest.TestCase):
 
             model.eval()
             outputs = model.greedy_decode(src_tokens, max_length=length + 10)
+
+            if outputs.size(1) != tgt_outputs.size(1):
+                continue
+
+            if not (outputs == tgt_outputs).all():
+                continue
+
+            # check success!
+            break
+
+        self.assertEqual(outputs.size(1), tgt_outputs.size(1),
+                         'output_length must equal')
+        for i in range(bsz):
+            for j in range(length):
+                self.assertEqual(
+                    outputs[i][j].item(), tgt_outputs[i][j].item(),
+                    '(%d, %d) equal %d = %d' %
+                    (i, j, outputs[i][j].item(), tgt_outputs[i][j].item()))
+
+    def test_beam_decoded(self):
+        # do not shuffle, alway use the same 4 instances
+        # TODO: It seems the 5th instance is quite difficult
+        # for the model (?), unsure if there is problem
+        dl = data_set.get_dataloader(self.data_splits['trn'],
+                                     batch_size=4,
+                                     shuffle=False)
+        for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
+            # get one batch
+            break
+
+        bsz, length = tgt_outputs.size()
+
+        # we try at most 10 times before failure
+        # TODO: it seems that sometimes beam search fail,
+        # not sure if there are problems
+        for _ in range(10):
+            model = self.model
+            model.reset_parameters()
+            opt = torch.optim.Adam(model.parameters(), lr=5e-4)
+            sch = InverseSqrtScheduler(opt, warmup_steps=500, min_lr=1e-9)
+            model.train()
+            for _ in range(500):
+                opt.zero_grad()
+                outputs = model.forward(src_tokens, src_lengths, tgt_inputs,
+                                        tgt_lengths)
+                nll = losses.masked_nll(outputs, tgt_lengths, tgt_outputs)
+                nll.backward()
+                opt.step()
+                sch.step()
+
+            model.eval()
+            outputs = model.beam_decode(
+                    src_tokens, max_length=length + 10, beam_size=3)
 
             if outputs.size(1) != tgt_outputs.size(1):
                 continue

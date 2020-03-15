@@ -33,3 +33,13 @@ def expand_states(cache, beam_size, dim=1):
     """
     for key, values in cache.items():
         cache[key] = values.repeat_interleave(beam_size, dim=dim)
+
+
+def select_states(cache, index, dim=0):
+    """select_states
+
+    :param cache:
+    :param dim: select dim
+    """
+    for key, values in cache.items():
+        cache[key] = values.gather(dim=dim, index=index)
