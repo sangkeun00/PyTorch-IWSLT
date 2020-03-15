@@ -80,7 +80,12 @@ class Trainer(object):
 
                 # Loss calculation
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
-                loss = models.utils.masked_nll(logits, tgt_lens, tgt_out)
+                loss = models.utils.masked_nll(
+                    logits=logits,
+                    lengths=tgt_lens,
+                    targets=tgt_out,
+                    label_smoothing=self.args.label_smoothing,
+                )
 
                 # Optimizer update
                 loss.backward()
