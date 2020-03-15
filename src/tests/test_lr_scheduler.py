@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from ..lr_scheduler import InverseSqrtScheduler
+from ..optim.lr_scheduler import InverseSqrtScheduler
 
 
 class SchedulerTest(unittest.TestCase):

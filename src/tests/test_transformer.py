@@ -4,7 +4,7 @@ from argparse import Namespace
 import torch
 import torch.nn.functional as F
 
-from ..lr_scheduler import InverseSqrtScheduler
+from ..optim.lr_scheduler import InverseSqrtScheduler
 from ..model import transformer
 from ..model import easy_transformer
 from ..model import utils
@@ -29,7 +29,8 @@ class TransformerTest(unittest.TestCase):
                               dropout=0.,
                               act_dropout=0.,
                               attn_dropout=0.,
-                              embed_dropout=0.)
+                              embed_dropout=0.,
+                              dec_tied_weight=False)
         self.model = transformer.Transformer(
             self.args,
             src_dict=self.data_splits.vocab_src,
