@@ -1,3 +1,4 @@
+import os
 import argparse
 import time
 
@@ -168,6 +169,27 @@ class Trainer(object):
 
     def test(self):
         pass
+
+    def save(self, path, epoch=None):
+        os.makedirs(path, exist_ok=True)
+        if epoch is not None:
+            save_path = os.path.join(path, 'model{}.pth'.format(epoch))
+        else:
+            save_path = os.path.join(path, 'model.pth')
+
+        self.model.float() # Convert model to fp32
+        torch.save(self.model.state_dict(), save_path)
+
+        print("[*] Model is saved in '{}'...".format(save_path))
+
+    def load(self, path):
+        self.model.float()
+        self.model.load_state_dict(torch.load(path))
+
+        if self.args.fp16:
+            self.model.half()
+
+        print("[*] Model is loaded from '{}'".format(path))
 
 
 def main():
