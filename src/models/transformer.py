@@ -252,7 +252,7 @@ class Transformer(nn.Module):
 
             ended = ((tgt_prev_tokens == self.end_id)
                      | (tgt_prev_tokens == self.pad_id))
-            if ended.all():
+            if ended.view(bsz, beam_size, -1)[:, 0, :].all():
                 break
         # returns only top values
         decoded_outputs = decoded_outputs.view(bsz, beam_size, -1)[:, 0, :]
