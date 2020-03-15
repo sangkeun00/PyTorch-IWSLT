@@ -22,3 +22,14 @@ def cache_states(cache, key, tensor, dim=0):
 def get_states(cache, key):
     if cache is not None and key in cache:
         return cache[key]
+
+
+def expand_states(cache, beam_size, dim=1):
+    """expand_states
+
+    :param cache:
+    :param beam_size:
+    :param dim: batch dim
+    """
+    for key, values in cache.items():
+        cache[key] = values.repeat_interleave(beam_size, dim=dim)
