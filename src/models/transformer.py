@@ -404,7 +404,7 @@ class TransformerDecoder(nn.Module):
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
 
         x = x.transpose(0, 1)
-        cache_states(cache, 0, x)
+        new_states = [x]
         for idx, layer in enumerate(self.layers, start=1):
             x = layer(x,
                       encoder_out=encoder_out,
@@ -412,7 +412,9 @@ class TransformerDecoder(nn.Module):
                       tgt_key_padding_mask=tgt_key_padding_mask,
                       tgt_mask=tgt_mask,
                       prev_x=get_states(cache, idx-1))
-            cache_states(cache, idx, x)
+            new_states.append(x)
+        for idx, state in enumerate(new_states):
+            cache_states(cache, idx, state)
 
         x = self.last_layernorm(x)
         # [T, B, C] -> [B, T, C]
