@@ -252,7 +252,7 @@ def parse_args():
                         type=float,
                         default=5e-4,
                         help='learning rate')
-    parser.add_argument('--betas', nargs=2, default=(0.9, 0.997))
+    parser.add_argument('--betas', type=float, nargs=2, default=(0.9, 0.997))
     parser.add_argument('--optim', choices=('adam', 'adamw'), default='adamw')
     parser.add_argument('--decay-method',
                         choices=('inverse_sqrt', 'cos'),
@@ -268,22 +268,22 @@ def parse_args():
     parser.add_argument('--transformer-impl',
                         choices=('custom', 'pytorch'),
                         default='custom')
-    parser.add_argument('--dec-embed-dim', default=512)
-    parser.add_argument('--dec-ffn-dim', default=1024)
-    parser.add_argument('--dec-num-heads', default=4)
-    parser.add_argument('--dec-num-layers', default=6)
+    parser.add_argument('--dec-embed-dim', type=int, default=512)
+    parser.add_argument('--dec-ffn-dim', type=int, default=1024)
+    parser.add_argument('--dec-num-heads', type=int, default=4)
+    parser.add_argument('--dec-num-layers', type=int, default=6)
     parser.add_argument('--dec-layernorm-before', action='store_true')
-    parser.add_argument('--enc-embed-dim', default=512)
-    parser.add_argument('--enc-ffn-dim', default=1024)
-    parser.add_argument('--enc-num-heads', default=4)
-    parser.add_argument('--enc-num-layers', default=6)
+    parser.add_argument('--enc-embed-dim', type=int, default=512)
+    parser.add_argument('--enc-ffn-dim', type=int, default=1024)
+    parser.add_argument('--enc-num-heads', type=int, default=4)
+    parser.add_argument('--enc-num-layers', type=int, default=6)
     parser.add_argument('--enc-layernorm-before', action='store_true')
     parser.add_argument('--dec-tied-weight', type=bool, default=True)
 
-    parser.add_argument('--dropout', default=0.3)
-    parser.add_argument('--act-dropout', default=0.1)
-    parser.add_argument('--attn-dropout', default=0.0)
-    parser.add_argument('--embed-dropout', default=0.3)
+    parser.add_argument('--dropout', type=float, default=0.3)
+    parser.add_argument('--act-dropout', type=float, default=0.1)
+    parser.add_argument('--attn-dropout', type=float, default=0.0)
+    parser.add_argument('--embed-dropout', type=float, default=0.3)
 
     # Logging parameters
     parser.add_argument('--save-path', type=str, default='./save/')
