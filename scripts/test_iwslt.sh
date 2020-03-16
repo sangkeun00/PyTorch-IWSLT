@@ -32,6 +32,8 @@ if [ ! -f outputs/test.en-de ]; then
     --embed-dropout 0.3
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.en-de > outputs/test.en-de
 fi
+echo evaluate en-de
+./multi-bleu.perl data/iwslt-2014/test.de < outputs/test.en-de
 
 if [ ! -f outputs/test.de-en ]; then
   python -m src.trainer \
@@ -64,3 +66,5 @@ if [ ! -f outputs/test.de-en ]; then
     --embed-dropout 0.3
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.de-en > outputs/test.de-en
 fi
+echo evaluate de-en
+./multi-bleu.perl data/iwslt-2014/test.en < outputs/test.de-en
