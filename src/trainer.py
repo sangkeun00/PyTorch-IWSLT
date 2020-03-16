@@ -9,6 +9,7 @@ from . import data_set
 from . import models
 from . import optim
 from . import losses
+from . import utils
 
 
 class Trainer(object):
@@ -99,13 +100,10 @@ class Trainer(object):
             self.optimizer.zero_grad()
             print("=" * os.get_terminal_size()[0])
             print("Epoch {} ::: Train".format(epoch))
-            for idx, batch in enumerate(self.train_loader):
+            for idx, batch in enumerate(
+                    utils.yield_to_device(self.train_loader, self.device)):
                 # Data loading
-                src = batch[0].to(self.device)
-                src_lens = batch[1].to(self.device)
-                tgt_in = batch[2].to(self.device)
-                tgt_out = batch[3].to(self.device)
-                tgt_lens = batch[4].to(self.device)
+                src, src_lens, tgt_in, tgt_out, tgt_lens = batch
 
                 # Loss calculation
                 logits = self.model(src, src_lens, tgt_in, tgt_lens)
@@ -163,13 +161,9 @@ class Trainer(object):
     def validation(self):
         cum_loss = 0
         cum_tokens = 0
-        for batch in self.val_loader:
+        for batch in utils.yield_to_device(self.val_loader, self.device):
             # Data loading
-            src = batch[0].to(self.device)
-            src_lens = batch[1].to(self.device)
-            tgt_in = batch[2].to(self.device)
-            tgt_out = batch[3].to(self.device)
-            tgt_lens = batch[4].to(self.device)
+            src, src_lens, tgt_in, tgt_out, tgt_lens = batch
 
             # Loss calculation
             with torch.no_grad():

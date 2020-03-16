@@ -1,3 +1,6 @@
+from collections.abc import Iterable
+from collections.abc import Mapping
+
 import torch
 
 
@@ -43,3 +46,18 @@ def select_states(cache, index, dim=0):
     """
     for key, values in cache.items():
         cache[key] = values.gather(dim=dim, index=index)
+
+
+def to_device(tensor, device):
+    if isinstance(tensor, torch.Tensor):
+        return tensor.to(device, non_blocking=True)
+    if isinstance(tensor, Mapping):
+        return {key: to_device(value, device) for key, value in tensor.items()}
+    if isinstance(tensor, Iterable):
+        return [to_device(x, device) for x in tensor]
+    raise NotImplementedError()
+
+
+def yield_to_device(generator, device):
+    for x in generator:
+        yield to_device(x, device)

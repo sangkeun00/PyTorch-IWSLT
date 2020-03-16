@@ -1,7 +1,5 @@
 import os
 from collections import Counter
-from collections.abc import Iterable
-from collections.abc import Mapping
 
 import numpy as np
 import torch
@@ -198,21 +196,6 @@ def load_sents(path):
         for line in infile:
             sent = ' '.join(line.strip().split())
             yield sent
-
-
-def to_device(tensor, device):
-    if isinstance(tensor, torch.Tensor):
-        return tensor.to(device, non_blocking=True)
-    if isinstance(tensor, Mapping):
-        return {key: to_device(value, device) for key, value in tensor.items()}
-    if isinstance(tensor, Iterable):
-        return [to_device(x, device) for x in tensor]
-    raise NotImplementedError()
-
-
-def yield_to_device(generator, device):
-    for x in generator:
-        yield to_device(x, device)
 
 
 class LenMatchBatchSampler(torch.utils.data.BatchSampler):
