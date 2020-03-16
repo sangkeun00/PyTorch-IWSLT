@@ -98,8 +98,8 @@ class Trainer(object):
             cum_tokens = 0
             begin_time = time.time()
             self.optimizer.zero_grad()
-            print("=" * os.get_terminal_size()[0])
-            print("Epoch {} ::: Train".format(epoch))
+            print('=' * os.get_terminal_size()[0])
+            print('Epoch {} ::: Train'.format(epoch))
             for idx, batch in enumerate(
                     utils.yield_to_device(self.train_loader, self.device)):
                 # Data loading
@@ -135,27 +135,27 @@ class Trainer(object):
                 avg_nll = cum_nll / cum_tokens
                 avg_ppl = 2 ** avg_nll
                 cur_time = time.time()
-                print(("\r[step {:4d}/{}] loss: {:.3f}, "
-                       "nll loss: {:.3f}, ppl: {:.3f}, time: {:.1f}s").format(
+                print(('\r[step {:4d}/{}] loss: {:.3f}, '
+                       'nll loss: {:.3f}, ppl: {:.3f}, time: {:.1f}s').format(
                           idx + 1,
                           len(self.train_loader),
                           avg_loss,
                           avg_nll,
                           avg_ppl,
                           cur_time - begin_time),
-                      end="")
+                      end='')
 
             print()
             print('-' * 50)
-            print("Epoch {} ::: Validation".format(epoch))
+            print('Epoch {} ::: Validation'.format(epoch))
             val_loss, val_ppl = self.validation()
             best_ppl = min(best_ppl, val_ppl)
-            print(("nll loss: {:.3f}, ppl: {:.3f}, "
-                   "best ppl: {:.3f}").format(val_loss, val_ppl, best_ppl))
+            print(('nll loss: {:.3f}, ppl: {:.3f}, '
+                   'best ppl: {:.3f}').format(val_loss, val_ppl, best_ppl))
 
             self.save(self.args.save_path, epoch)
             if val_ppl == best_ppl:
-                print("[*] Best model is changed!")
+                print('[*] Best model is changed!')
                 self.save(self.args.save_path, verbose=False)
 
     def validation(self):
@@ -191,14 +191,14 @@ class Trainer(object):
         else:
             save_path = os.path.join(path, 'model.pth')
 
-        self.model.float() # Convert model to fp32
+        self.model.float()  # Convert model to fp32
         torch.save(self.model.state_dict(), save_path)
 
         if self.args.fp16:
             self.model.half()
 
         if verbose:
-            print("[*] Model is saved in '{}'.".format(save_path))
+            print('[*] Model is saved in \'{}\'.'.format(save_path))
 
     def load(self, path):
         self.model.float()
@@ -207,7 +207,7 @@ class Trainer(object):
         if self.args.fp16:
             self.model.half()
 
-        print("[*] Model is loaded from '{}'".format(path))
+        print('[*] Model is loaded from \'{}\''.format(path))
 
 
 def main():
