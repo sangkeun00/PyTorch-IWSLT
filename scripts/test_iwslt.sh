@@ -4,13 +4,17 @@ mkdir -p outputs
 python -m src.trainer \
   --mode test \
   --init-checkpoint models/en-de/model.pth \
+  --decode-method beam \
+  --beam-size 5 \
+  --max-decode-length-multiplier 2.0 \
+  --max-decode-length-base 10 \
   --output-path outputs/test.en-de \
-  --gpu -1 \
+  --gpu 0 \
   --enc-layernorm-before \
   --dec-layernorm-before \
   --lang-src en \
   --lang-tgt de \
-  --batch-size 1 \
+  --batch-size 10 \
   --transformer-impl custom \
   --dec-embed-dim 512 \
   --dec-ffn-dim 1024 \
@@ -29,13 +33,17 @@ python -m src.trainer \
 python -m src.trainer \
   --mode test \
   --init-checkpoint models/de-en/model.pth \
+  --decode-method beam \
+  --beam-size 5 \
+  --max-decode-length-multiplier 2.0 \
+  --max-decode-length-base 10 \
   --output-path outputs/test.de-en \
-  --gpu -1 \
+  --gpu 0 \
   --enc-layernorm-before \
   --dec-layernorm-before \
   --lang-src de \
   --lang-tgt en \
-  --batch-size 1 \
+  --batch-size 10 \
   --transformer-impl custom \
   --dec-embed-dim 512 \
   --dec-ffn-dim 1024 \

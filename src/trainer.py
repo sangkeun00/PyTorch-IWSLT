@@ -199,26 +199,24 @@ class Trainer(object):
             for batch in utils.yield_to_device(
                     tqdm(self.test_loader), self.device):
                 src, src_lens, tgt_in, tgt_out, tgt_lens = batch
+                src_len = src_lens.max().cpu().item()
+                tgt_len = int(self.args.max_decode_length_multiplier * src_len
+                              + self.args.max_decode_length_base)
                 with torch.no_grad():
                     if self.args.decode_method == 'greedy':
                         decoded = self.model.greedy_decode(
                                 src,
-                                # beam_size=self.args.beam_size,
-                                max_length=500)
+                                max_length=tgt_len)
                     elif self.args.decode_method == 'beam':
                         decoded = self.model.beam_decode(
                                 src,
                                 beam_size=self.args.beam_size,
-                                max_length=500)
+                                max_length=tgt_len)
                     else:
                         raise NotImplementedError()
                     decoded = decoded.cpu().numpy()
-                    tgt_out = tgt_out.cpu().numpy()
-                    for seq, tgt_seq in zip(decoded, tgt_out):
+                    for seq in decoded:
                         tks = vocab_tgt.decode_ids(seq, dettach_ends=True)
-                        tgt_tks = vocab_tgt.decode_ids(tgt_seq, dettach_ends=True)
-                        print('decoded', tks)
-                        print('tgt', tgt_tks)
                         outfile.write('{}\n'.format(' '.join(tks)))
 
         if is_training:
@@ -315,7 +313,13 @@ def parse_args():
     parser.add_argument('--beam-size', type=int, default=4)
     parser.add_argument('--decode-method',
                         choices=('greedy', 'beam'),
-                        default='greedy')
+                        default='beam')
+    parser.add_argument('--max-decode-length-multiplier',
+                        type=float,
+                        default=2)
+    parser.add_argument('--max-decode-length-base',
+                        type=int,
+                        default=10)
 
     # model parameters
     parser.add_argument('--transformer-impl',
