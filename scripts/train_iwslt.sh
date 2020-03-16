@@ -33,6 +33,7 @@ python -m src.trainer \
   --attn-dropout 0.0 \
   --embed-dropout 0.3
 
+# de -> en
 python -m src.trainer \
   --gpu 0 \
   --enc-layernorm-before \
