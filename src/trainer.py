@@ -3,6 +3,7 @@ import argparse
 import time
 
 import torch
+from tqdm import tqdm
 
 from . import data_set
 from . import models
@@ -163,10 +164,12 @@ class Trainer(object):
                 print('[*] Best model is changed!')
                 self.save(self.args.save_path, verbose=False)
 
-    def validation(self):
+    def validation(self, dl=None):
         cum_loss = 0
         cum_tokens = 0
-        for batch in utils.yield_to_device(self.val_loader, self.device):
+        if dl is None:
+            dl = self.val_loader
+        for batch in utils.yield_to_device(dl, self.device):
             # Data loading
             src, src_lens, tgt_in, tgt_out, tgt_lens = batch
 
@@ -186,8 +189,40 @@ class Trainer(object):
 
         return nll_loss, ppl
 
-    def test(self):
-        pass
+    def test(self, path):
+        is_training = self.model.training
+        self.model.eval()
+        out_dir = os.path.dirname(path)
+        os.makedirs(out_dir, exist_ok=True)
+        vocab_tgt = self.data_splits.vocab_tgt
+        with open(path, 'w') as outfile:
+            for batch in utils.yield_to_device(
+                    tqdm(self.test_loader), self.device):
+                src, src_lens, tgt_in, tgt_out, tgt_lens = batch
+                with torch.no_grad():
+                    if self.args.decode_method == 'greedy':
+                        decoded = self.model.greedy_decode(
+                                src,
+                                # beam_size=self.args.beam_size,
+                                max_length=500)
+                    elif self.args.decode_method == 'beam':
+                        decoded = self.model.beam_decode(
+                                src,
+                                beam_size=self.args.beam_size,
+                                max_length=500)
+                    else:
+                        raise NotImplementedError()
+                    decoded = decoded.cpu().numpy()
+                    tgt_out = tgt_out.cpu().numpy()
+                    for seq, tgt_seq in zip(decoded, tgt_out):
+                        tks = vocab_tgt.decode_ids(seq, dettach_ends=True)
+                        tgt_tks = vocab_tgt.decode_ids(tgt_seq, dettach_ends=True)
+                        print('decoded', tks)
+                        print('tgt', tgt_tks)
+                        outfile.write('{}\n'.format(' '.join(tks)))
+
+        if is_training:
+            self.model.train()
 
     def save(self, path, epoch=None, verbose=True):
         os.makedirs(path, exist_ok=True)
@@ -230,12 +265,22 @@ def main():
     device = torch.device(cuda_device if use_cuda else 'cpu')
     # initialize trainer
     trainer = Trainer(args, data_splits, device)
-    trainer.train()
+    if args.init_checkpoint:
+        trainer.load(args.init_checkpoint)
+    if args.mode == 'train':
+        trainer.train()
+    elif args.mode == 'test':
+        assert args.output_path
+        assert args.init_checkpoint
+        trainer.test(args.output_path)
+    else:
+        raise NotImplementedError()
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment parameters
+    parser.add_argument('--mode', choices=('train', 'test'), default='train')
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--eval', action='store_true', help='Test mode')
@@ -263,6 +308,14 @@ def parse_args():
     parser.add_argument('--batch-size', type=int, default=80)
     parser.add_argument('--label-smoothing', type=float, default=0.)
     parser.add_argument('--gradient-accumulation', type=int, default=2)
+
+    # testing parameters
+    parser.add_argument('--init-checkpoint')
+    parser.add_argument('--output-path')
+    parser.add_argument('--beam-size', type=int, default=4)
+    parser.add_argument('--decode-method',
+                        choices=('greedy', 'beam'),
+                        default='greedy')
 
     # model parameters
     parser.add_argument('--transformer-impl',
