@@ -238,7 +238,8 @@ def get_dataloader(dset,
                    batch_size,
                    shuffle=True,
                    sample_by_length=True,
-                   num_workers=2):
+                   num_workers=2,
+                   pin_memory=True):
     vocab_src = dset.vocab_src
     vocab_tgt = dset.vocab_tgt
     assert vocab_src.PAD_ID == vocab_tgt.PAD_ID
@@ -282,12 +283,12 @@ def get_dataloader(dset,
                                 num_workers=num_workers,
                                 collate_fn=my_collate,
                                 batch_sampler=len_sampler,
-                                pin_memory=True)
+                                pin_memory=pin_memory)
     else:
         dataloader = DataLoader(dset,
                                 batch_size=batch_size,
                                 shuffle=shuffle,
                                 num_workers=num_workers,
                                 collate_fn=my_collate,
-                                pin_memory=True)
+                                pin_memory=pin_memory)
     return dataloader

@@ -3,7 +3,6 @@ import argparse
 import time
 
 import torch
-from apex.fp16_utils import FP16_Optimizer
 
 from . import data_set
 from . import models
@@ -18,6 +17,7 @@ class Trainer(object):
         self.args = args
         self.data_splits = data_splits
         self.device = device
+        self.cpu_only = (device == torch.device('cpu'))
 
         if args.transformer_impl == 'pytorch':
             self.model = models.easy_transformer.EasyTransformer(
@@ -50,6 +50,7 @@ class Trainer(object):
             raise ValueError
 
         if args.fp16:
+            from apex.fp16_utils import FP16_Optimizer
             self.model.half()
             use_adamw = True if args.optim == 'adamw' else False
             self.optimizer = optim.adam.Adam16(
@@ -79,15 +80,19 @@ class Trainer(object):
 
         self.train_loader = data_set.get_dataloader(
             dset=data_splits['trn'],
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
+            pin_memory=not self.cpu_only
         )
         self.val_loader = data_set.get_dataloader(
             dset=data_splits['val'],
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
+            pin_memory=not self.cpu_only
         )
         self.test_loader = data_set.get_dataloader(
             dset=data_splits['tst'],
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
+            shuffle=False,
+            pin_memory=not self.cpu_only
         )
 
     def train(self):
@@ -202,7 +207,7 @@ class Trainer(object):
 
     def load(self, path):
         self.model.float()
-        self.model.load_state_dict(torch.load(path))
+        self.model.load_state_dict(torch.load(path, map_location=self.device))
 
         if self.args.fp16:
             self.model.half()
@@ -220,8 +225,9 @@ def main():
                                            lang_tgt=args.lang_tgt,
                                            lowercase=args.lowercase)
 
-    cuda_device = "cuda:{}".format(args.gpu)
-    device = torch.device(cuda_device if torch.cuda.is_available() else "cpu")
+    cuda_device = 'cuda:{}'.format(args.gpu)
+    use_cuda = args.gpu >= 0 and torch.cuda.is_available()
+    device = torch.device(cuda_device if use_cuda else 'cpu')
     # initialize trainer
     trainer = Trainer(args, data_splits, device)
     trainer.train()
