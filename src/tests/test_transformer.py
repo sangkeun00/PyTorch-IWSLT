@@ -133,10 +133,7 @@ class TransformerTest(unittest.TestCase):
 
         bsz, length = tgt_outputs.size()
 
-        # we try at most 10 times before failure
-        # TODO: it seems that sometimes beam search fail,
-        # not sure if there are problems
-        for _ in range(10):
+        for _ in range(1):
             model = self.model
             model.reset_parameters()
             opt = torch.optim.Adam(model.parameters(), lr=5e-4)

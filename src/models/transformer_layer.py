@@ -133,13 +133,14 @@ class DecoderLayer(nn.Module):
             prev_x=None):
         # self-attn part
         identity = x
-        if self.layernorm_before:
-            x = self.attn_layernorm(x)
-
         if prev_x is None:
             kv = x
         else:
             kv = torch.cat([prev_x, x], dim=0)
+        if self.layernorm_before:
+            x = self.attn_layernorm(x)
+            kv = self.attn_layernorm(kv)
+
         x = self.self_attn(query=x, key=kv, value=kv,
                            key_padding_mask=tgt_key_padding_mask,
                            attn_mask=tgt_mask)[0]
