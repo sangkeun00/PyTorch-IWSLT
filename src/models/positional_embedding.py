@@ -20,8 +20,8 @@ class PositionalEmbedding(nn.Module):
         pe = torch.cat([torch.sin(pe), torch.cos(pe)], dim=1)
         self.register_buffer('pe', pe)
 
-    def forward(self, tokens):
-        out = self.pe[:tokens.shape[1], :]
+    def forward(self, tokens, shift=0):
+        out = self.pe[shift:shift+tokens.shape[1], :]
         out = out.unsqueeze(0)
 
         return out.detach()

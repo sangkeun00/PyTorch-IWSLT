@@ -42,14 +42,18 @@ class TransformerTest(unittest.TestCase):
     def runnable_check(self, model):
         model.reset_parameters()
         model.train()
-        dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
+        dl = data_set.get_dataloader(self.data_splits['trn'],
+                                     batch_size=10,
+                                     pin_memory=False)
         for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
             model.forward(src_tokens, src_lengths, tgt_inputs, tgt_lengths)
 
     def converge_check(self, model, epochs=15):
         model.reset_parameters()
         model.train()
-        dl = data_set.get_dataloader(self.data_splits['trn'], batch_size=10)
+        dl = data_set.get_dataloader(self.data_splits['trn'],
+                                     batch_size=10,
+                                     pin_memory=False)
         opt = torch.optim.Adam(model.parameters(), lr=0.001)
         for _ in range(epochs):
             for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
@@ -70,11 +74,10 @@ class TransformerTest(unittest.TestCase):
         self.converge_check(self.model)
 
     def test_greedy_decoded(self):
-        # do not shuffle, alway use the same 4 instances
-        # TODO: It seems the 5th instance is quite difficult
-        # for the model (?), unsure if there is problem
+        # do not shuffle, alway use the same 5 instances
         dl = data_set.get_dataloader(self.data_splits['trn'],
-                                     batch_size=4,
+                                     pin_memory=False,
+                                     batch_size=5,
                                      shuffle=False)
         for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
             # get one batch
@@ -119,12 +122,11 @@ class TransformerTest(unittest.TestCase):
                     (i, j, outputs[i][j].item(), tgt_outputs[i][j].item()))
 
     def test_beam_decoded(self):
-        # do not shuffle, alway use the same 4 instances
-        # TODO: It seems the 5th instance is quite difficult
-        # for the model (?), unsure if there is problem
+        # do not shuffle, alway use the same 5 instances
         dl = data_set.get_dataloader(self.data_splits['trn'],
-                                     batch_size=4,
-                                     shuffle=False)
+                                     batch_size=5,
+                                     shuffle=False,
+                                     pin_memory=False)
         for src_tokens, src_lengths, tgt_inputs, tgt_outputs, tgt_lengths in dl:
             # get one batch
             break
@@ -150,8 +152,9 @@ class TransformerTest(unittest.TestCase):
                 sch.step()
 
             model.eval()
-            outputs = model.beam_decode(
-                    src_tokens, max_length=length + 10, beam_size=3)
+            outputs = model.beam_decode(src_tokens,
+                                        max_length=length + 10,
+                                        beam_size=3)
 
             if outputs.size(1) != tgt_outputs.size(1):
                 continue

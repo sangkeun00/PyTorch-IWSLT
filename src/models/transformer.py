@@ -397,7 +397,8 @@ class TransformerDecoder(nn.Module):
 
     def forward(self, encoder_out, tgt_tokens, src_key_padding_mask, tgt_key_padding_mask, tgt_mask, cache=None):
         x = self.embedding(tgt_tokens) * self.embed_scale
-        x = x + self.positional_embedding(tgt_tokens)
+        shift = 0 if cache is None or 0 not in cache else cache[0].size()[0]
+        x = x + self.positional_embedding(tgt_tokens, shift=shift)
         if tgt_key_padding_mask is not None:
             x = x * (1. - tgt_key_padding_mask.type_as(x).unsqueeze(2))
         x = F.dropout(x, p=self.embed_dropout, training=self.training)
