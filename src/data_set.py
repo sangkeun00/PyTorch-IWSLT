@@ -180,12 +180,13 @@ class Vocab(object):
         return tids
 
     def decode_ids(self, tids, dettach_ends=True):
+        tids = [int(t) for t in tids]
         if dettach_ends:
-            if len(tids) >= 1 and tids[0] == Vocab.START_ID:
+            while len(tids) >= 1 and tids[0] == Vocab.START_ID:
                 tids = tids[1:]
-            if len(tids) >= 1 and tids[-1] == Vocab.END_ID:
+            while len(tids) >= 1 and tids[-1] in {Vocab.END_ID, Vocab.PAD_ID}:
                 tids = tids[:-1]
-        return [self.get_token[tid] for tid in tids]
+        return [self.get_token(tid) for tid in tids]
 
     def __len__(self):
         return len(self.tks)
