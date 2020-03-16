@@ -16,6 +16,7 @@ dependencies:
   - tqdm=4.43.0
   - yapf=0.29.0
   - tensorboard=1.15.0
+  - nvidia-apex=0.1
   - pip:
     - pytorch-lightning==0.7.1
     - subword-nmt==0.3.7
