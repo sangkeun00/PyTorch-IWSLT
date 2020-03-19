@@ -44,7 +44,8 @@ python -m src.trainer \
     --mode test \
     --init-checkpoint [model_path] \
     --decode-method beam \
-    --beam-size 5
+    --beam-size 5 \
+    --output-path [decode_output]
 ```
 
 Or you could also directly execute the script
