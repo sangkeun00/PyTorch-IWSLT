@@ -19,7 +19,12 @@ dependencies:
   - portalocker=1.5.2
   - tensorboard=1.15.0
   - nvidia-apex=0.1
+  - regex=2020.2.20
+  - six=1.14.0
+  - click=7.1.1
+  - joblib=0.14.1
   - pip:
     - pytorch-lightning==0.7.1
     - subword-nmt==0.3.7
     - sacrebleu==1.4.4
+    - sacremoses==0.0.38
