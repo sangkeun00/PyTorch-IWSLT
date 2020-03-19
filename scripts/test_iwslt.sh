@@ -33,7 +33,10 @@ if [ ! -f outputs/test.en-de ]; then
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.en-de > outputs/test.en-de
 fi
 echo evaluate en-de
-./multi-bleu.perl data/iwslt-2014/test.de < outputs/test.en-de
+# ./multi-bleu.perl data/iwslt-2014/test.de < outputs/test.en-de
+sacremoses detokenize -l de < outputs/test.en-de > outputs/test.en-de.detok
+sacremoses detokenize -l de < data/iwslt-2014/test.de > data/iwslt-2014/test.de.detok
+sacrebleu data/iwslt-2014/test.de.detok -l en-de < outputs/test.en-de.detok
 
 if [ ! -f outputs/test.de-en ]; then
   python -m src.trainer \
@@ -67,4 +70,7 @@ if [ ! -f outputs/test.de-en ]; then
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.de-en > outputs/test.de-en
 fi
 echo evaluate de-en
-./multi-bleu.perl data/iwslt-2014/test.en < outputs/test.de-en
+# ./multi-bleu.perl data/iwslt-2014/test.en < outputs/test.de-en
+sacremoses detokenize -l en < outputs/test.de-en > outputs/test.de-en.detok
+sacremoses detokenize -l en < data/iwslt-2014/test.en > data/iwslt-2014/test.en.detok
+sacrebleu data/iwslt-2014/test.en.detok -l de-en < outputs/test.de-en.detok
