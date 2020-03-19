@@ -49,7 +49,14 @@ python -m src.trainer \
     --output-path [decode_output]
 ```
 
-Or you could also directly execute the script
+Once the output is generated, use the following command to remove BPE, and then BLEU can be computed against the ground truth using standard evaluation scripts.
+
+```
+sed -r 's/(@@ )|(@@ ?$)//g' [decode_output] > [no_bpe_output]
+```
+
+
+Or you could also directly execute the script to automatically run the above steps.
 ```
 ./scripts/test_iwslt.sh
 ```
