@@ -31,5 +31,23 @@ If you want to test this, please replace `src.trainer` with `src.trainer_pl` of 
 
 With Volta GPU (e.g., 2080Ti), you can further speed up training speed by adding `--fp16` option.
 
+You could also directly execute the script
+```
+./scripts/train_iwslt.sh
+```
+
 ## Testing
-TODO
+
+Use test mode to generate target sentences based on the trained model.
+```
+python -m src.trainer \
+    --mode test \
+    --init-checkpoint [model_path] \
+    --decode-method beam \
+    --beam-size 5
+```
+
+Or you could also directly execute the script
+```
+./scripts/test_iwslt.sh
+```
