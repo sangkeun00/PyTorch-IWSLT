@@ -15,8 +15,11 @@ dependencies:
   - pytorch=1.4.0
   - tqdm=4.43.0
   - yapf=0.29.0
+  - typing=3.6.4
+  - portalocker=1.5.2
   - tensorboard=1.15.0
   - nvidia-apex=0.1
   - pip:
     - pytorch-lightning==0.7.1
     - subword-nmt==0.3.7
+    - sacrebleu==1.4.4
