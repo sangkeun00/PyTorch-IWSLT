@@ -42,6 +42,7 @@ Use test mode to generate target sentences based on the trained model.
 ```
 python -m src.trainer \
     --mode test \
+    --gpu 0 \
     --init-checkpoint [model_path] \
     --decode-method beam \
     --beam-size 5 \
