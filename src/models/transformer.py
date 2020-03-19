@@ -120,7 +120,12 @@ class Transformer(nn.Module):
         decoded_outputs = torch.cat(decoded_outputs, dim=1)
         return decoded_outputs
 
-    def beam_decode(self, src_tokens, beam_size=5, max_length=1000):
+    def beam_decode(
+            self,
+            src_tokens,
+            beam_size=5,
+            length_normalize=True,
+            max_length=1000):
         """beam_decode
         Testing beam decoding possibilities
 
@@ -166,6 +171,7 @@ class Transformer(nn.Module):
         tgt_prev_tokens = tgt_prev_tokens.permute(0, 2, 1).reshape(
                 search_size, 1).contiguous()
         head_logp = head_logp.view(search_size, 1)
+        head_lengths = torch.ones_like(head_logp)
 
         # start beam search
         expand_states(cache, beam_size=beam_size, dim=1)
@@ -200,20 +206,35 @@ class Transformer(nn.Module):
                     cache=cache
             )
             assert decoder_out.size(1) == 1
-            # [SSZ, T, N]
+            # [SSZ, T=1, N]
             decoder_logp = torch.log_softmax(decoder_out, dim=-1)
-            # zero out ended probs
-            decoder_logp *= (1. - ended.to(decoder_logp.dtype))[:, :, None]
+            # if ended, don't increase lengths
+            decoder_lengths = (1. - ended.to(decoder_logp.dtype))
+            # zero out ended log probs
+            decoder_logp *= decoder_lengths[:, :, None]
             # accum log probs
             decoder_logp = decoder_logp + head_logp[:, :, None]
             decoder_logp = decoder_logp.view(
                     bsz, beam_size, 1, vocab_size).permute(0, 2, 1, 3)
+            # accum decoder lengths
+            decoder_lengths = decoder_lengths + head_lengths
+            decoder_lengths = decoder_lengths.view(
+                    bsz, beam_size, 1).permute(0, 2, 1)
+            # normed logp
+            decoder_normed_logp = (decoder_logp
+                                   / decoder_lengths[:, :, :, None]
+                                   ).contiguous().view(
+                                           bsz, 1, beam_size * vocab_size)
             # [B, 1, SSZ*V]
             decoder_logp = decoder_logp.contiguous().view(
                     bsz, 1, beam_size * vocab_size)
             # [B, 1, K]
-            top_idx = decoder_logp.argsort(
-                    descending=True, dim=-1)[:, :, :beam_size]
+            if length_normalize:
+                top_idx = decoder_normed_logp.argsort(
+                        descending=True, dim=-1)[:, :, :beam_size]
+            else:
+                top_idx = decoder_logp.argsort(
+                        descending=True, dim=-1)[:, :, :beam_size]
             # print('top_idx', top_idx)
             # [B, 1, K]
             top_logp = decoder_logp.gather(dim=-1, index=top_idx)
@@ -232,6 +253,8 @@ class Transformer(nn.Module):
             # print('top_prev_idx', top_prev_idx, ended.size())
             top_logp = top_logp.permute(0, 2, 1)
             head_logp = top_logp.contiguous().view(search_size, 1)
+            top_lengths = decoder_lengths.permute(0, 2, 1)
+            head_lengths = top_lengths.contiguous().view(search_size, 1)
             # print('head_logp', head_logp)
             top_tokens = top_tokens.permute(0, 2, 1)
             top_tokens = top_tokens.contiguous().view(search_size, 1)

@@ -149,27 +149,39 @@ class TransformerTest(unittest.TestCase):
                 sch.step()
 
             model.eval()
-            outputs = model.beam_decode(src_tokens,
+            outputs_1 = model.beam_decode(src_tokens,
                                         max_length=length + 10,
+                                        length_normalize=False,
+                                        beam_size=3)
+            outputs_2 = model.beam_decode(src_tokens,
+                                        max_length=length + 10,
+                                        length_normalize=True,
                                         beam_size=3)
 
-            if outputs.size(1) != tgt_outputs.size(1):
+            if outputs_1.size(1) != tgt_outputs.size(1):
+                continue
+            if outputs_2.size(1) != tgt_outputs.size(1):
                 continue
 
-            if not (outputs == tgt_outputs).all():
+            if not (outputs_1 == tgt_outputs).all():
+                continue
+            if not (outputs_2 == tgt_outputs).all():
                 continue
 
             # check success!
             break
 
-        self.assertEqual(outputs.size(1), tgt_outputs.size(1),
+        self.assertEqual(outputs_1.size(1), tgt_outputs.size(1),
                          'output_length must equal')
-        for i in range(bsz):
-            for j in range(length):
-                self.assertEqual(
-                    outputs[i][j].item(), tgt_outputs[i][j].item(),
-                    '(%d, %d) equal %d = %d' %
-                    (i, j, outputs[i][j].item(), tgt_outputs[i][j].item()))
+        self.assertEqual(outputs_2.size(1), tgt_outputs.size(1),
+                         'output_length must equal')
+        for outputs in (outputs_1, outputs_2):
+            for i in range(bsz):
+                for j in range(length):
+                    self.assertEqual(
+                        outputs[i][j].item(), tgt_outputs[i][j].item(),
+                        '(%d, %d) equal %d = %d' %
+                        (i, j, outputs[i][j].item(), tgt_outputs[i][j].item()))
 
     def test_easy_runnable(self):
         self.runnable_check(self.easy_model)

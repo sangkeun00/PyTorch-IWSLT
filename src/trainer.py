@@ -211,6 +211,7 @@ class Trainer(object):
                         decoded = self.model.beam_decode(
                                 src,
                                 beam_size=self.args.beam_size,
+                                length_normalize=self.args.length_normalize,
                                 max_length=tgt_len)
                     else:
                         raise NotImplementedError()
@@ -281,7 +282,6 @@ def parse_args():
     parser.add_argument('--mode', choices=('train', 'test'), default='train')
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--eval', action='store_true', help='Test mode')
 
     # data parameters
     parser.add_argument('--lowercase', action='store_true')
@@ -320,6 +320,7 @@ def parse_args():
     parser.add_argument('--max-decode-length-base',
                         type=int,
                         default=10)
+    parser.add_argument('--length-normalize', type=bool, default=True)
 
     # model parameters
     parser.add_argument('--transformer-impl',
