@@ -10,8 +10,7 @@ fi
 mkdir -p data
 if [ ! -f ./data/iwslt-2014/test.en ]; then
   cd data
-  # ../scripts/gdrive.sh https://drive.google.com/drive/folders/1TbbdOd_mbmVmZjHAvq9XyPSWWhHWVp0M
-  ../scripts/gdrive.sh https://drive.google.com/drive/folders/1dlzcAd7u2GQg3uEPmF6vCdSyK3vSfWXT
+  ../scripts/gdrive.sh https://drive.google.com/drive/folders/1TbbdOd_mbmVmZjHAvq9XyPSWWhHWVp0M
   # back to root
   cd ..
 fi
