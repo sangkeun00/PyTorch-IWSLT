@@ -269,9 +269,9 @@ def main():
     if args.mode == 'train':
         trainer.train()
     elif args.mode == 'val':
+        trainer.model.eval()
         val_nll, val_ppl = trainer.validation(dl=trainer.val_loader)
         tst_nll, tst_ppl = trainer.validation(dl=trainer.test_loader)
-        trainer.model.eval()
         print('VAL NLL=', val_nll, 'VAL_PPL=', val_ppl)
         print('TEST NLL=', tst_nll, 'TEST_PPL=', tst_ppl)
         trainer.model.train()
