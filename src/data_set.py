@@ -117,7 +117,7 @@ class Vocab(object):
     UNK_ID = 3
 
     @staticmethod
-    def load(path, train_path=None, lowercase=False, min_freq=2):
+    def load(path, train_path=None, lowercase=False, min_freq=1):
         if not os.path.exists(path):
             assert train_path is not None
             print('build vocab from %s...' % train_path)
@@ -132,7 +132,7 @@ class Vocab(object):
         return vocab
 
     @staticmethod
-    def build_vocab(path, lowercase=False, min_freq=2):
+    def build_vocab(path, lowercase=False, min_freq=1):
         cnts = Counter()
         for sent in load_sents(path):
             if lowercase:
@@ -147,7 +147,7 @@ class Vocab(object):
             '<unk>': Vocab.UNK_ID
         }
 
-        for key, c in sorted(cnts.items(), reverse=True):
+        for key, c in sorted(cnts.items(), key=lambda x: (-x[1], x[0])):
             if c >= min_freq and key not in vocab:
                 vocab[key] = len(vocab)
 
@@ -157,7 +157,9 @@ class Vocab(object):
 
         self.lowercase = lowercase
         self.vocab = vocab
-        self.tks = {tid: key for key, tid in vocab.items()}
+        self.tks = [None] * len(vocab)
+        for key, tid in vocab.items():
+            self.tks[tid] = key
 
     def dump(self, path):
         torch.save(self, path)
