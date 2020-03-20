@@ -165,6 +165,9 @@ class Trainer(object):
                 self.save(self.args.save_path, verbose=False)
 
     def validation(self, dl=None):
+        is_training = self.model.training
+        self.model.eval()
+
         cum_loss = 0
         cum_tokens = 0
         if dl is None:
@@ -186,6 +189,9 @@ class Trainer(object):
 
         nll_loss = cum_loss / cum_tokens
         ppl = 2 ** nll_loss
+
+        if is_training:
+            self.model.train()
 
         return nll_loss, ppl
 
@@ -269,12 +275,10 @@ def main():
     if args.mode == 'train':
         trainer.train()
     elif args.mode == 'val':
-        trainer.model.eval()
         val_nll, val_ppl = trainer.validation(dl=trainer.val_loader)
         tst_nll, tst_ppl = trainer.validation(dl=trainer.test_loader)
         print('VAL NLL=', val_nll, 'VAL_PPL=', val_ppl)
         print('TEST NLL=', tst_nll, 'TEST_PPL=', tst_ppl)
-        trainer.model.train()
     elif args.mode == 'test':
         assert args.output_path
         assert args.init_checkpoint
