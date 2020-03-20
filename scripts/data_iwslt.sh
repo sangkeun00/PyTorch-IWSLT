@@ -10,7 +10,8 @@ fi
 mkdir -p data
 if [ ! -f ./data/iwslt-2014/test.en ]; then
   cd data
-  ../scripts/gdrive.sh https://drive.google.com/drive/folders/1TbbdOd_mbmVmZjHAvq9XyPSWWhHWVp0M
+  # ../scripts/gdrive.sh https://drive.google.com/drive/folders/1TbbdOd_mbmVmZjHAvq9XyPSWWhHWVp0M
+  ../scripts/gdrive.sh https://drive.google.com/drive/folders/1dlzcAd7u2GQg3uEPmF6vCdSyK3vSfWXT
   # back to root
   cd ..
 fi
@@ -20,7 +21,7 @@ CAT=$ROOT_DIR/train.cat
 if [ ! -f $BPE_CODE ]; then
   cat $ROOT_DIR/train.en $ROOT_DIR/train.de > $CAT
   echo learning bpe for $CAT
-  subword-nmt learn-bpe -s 32000 < $CAT > $BPE_CODE
+  subword-nmt learn-bpe -s 10000 < $CAT > $BPE_CODE
 fi
 if [ ! -f $ROOT_DIR/test.bpe.en ]; then
   for lang in en de; do
