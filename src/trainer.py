@@ -268,6 +268,13 @@ def main():
         trainer.load(args.init_checkpoint)
     if args.mode == 'train':
         trainer.train()
+    elif args.mode == 'val':
+        val_nll, val_ppl = trainer.validation(dl=trainer.val_loader)
+        tst_nll, tst_ppl = trainer.validation(dl=trainer.test_loader)
+        trainer.model.eval()
+        print('VAL NLL=', val_nll, 'VAL_PPL=', val_ppl)
+        print('TEST NLL=', tst_nll, 'TEST_PPL=', tst_ppl)
+        trainer.model.train()
     elif args.mode == 'test':
         assert args.output_path
         assert args.init_checkpoint
@@ -279,7 +286,7 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment parameters
-    parser.add_argument('--mode', choices=('train', 'test'), default='train')
+    parser.add_argument('--mode', choices=('train', 'test', 'val'), default='train')
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
     parser.add_argument('--gpu', type=int, default=0)
 
