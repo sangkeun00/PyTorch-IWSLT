@@ -1,4 +1,4 @@
-name: nn4nlp-hw3-apex
+name: nn4nlp-hw3
 channels:
   - pytorch
   - conda-forge
