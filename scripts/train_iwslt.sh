@@ -9,7 +9,7 @@ python -m src.trainer \
   --lang-src en \
   --lang-tgt de \
   --save-path models/en-de \
-  --max-epochs 30 \
+  --max-epochs 60 \
   --learning-rate 5e-4 \
   --optim adamw \
   --decay-method inverse_sqrt \
@@ -42,7 +42,7 @@ python -m src.trainer \
   --lang-src de \
   --lang-tgt en \
   --save-path models/de-en \
-  --max-epochs 30 \
+  --max-epochs 60 \
   --learning-rate 5e-4 \
   --optim adamw \
   --decay-method inverse_sqrt \
