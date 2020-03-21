@@ -77,17 +77,21 @@ class SingleDataset(Dataset):
                  path_tgt,
                  vocab_src,
                  vocab_tgt,
-                 attach_ends=True):
+                 source_attach_ends=True):
         self.vocab_src = vocab_src
         self.vocab_tgt = vocab_tgt
-        self.attach_ends = attach_ends
+        self.source_attach_ends = source_attach_ends
         sents_src = []
         for sent in load_sents(path_src):
-            sent = vocab_src.encode_sent(sent, attach_ends=False)
+            sent = vocab_src.encode_sent(sent,
+                                         attach_starts=False,
+                                         attach_ends=source_attach_ends)
             sents_src.append(sent)
         sents_tgt = []
         for sent in load_sents(path_tgt):
-            sent = vocab_tgt.encode_sent(sent, attach_ends=attach_ends)
+            sent = vocab_tgt.encode_sent(sent,
+                                         attach_starts=True,
+                                         attach_ends=True)
 
             sents_tgt.append(sent)
 
@@ -164,15 +168,17 @@ class Vocab(object):
     def get_token_id(self, token):
         return self.vocab.get(token, Vocab.UNK_ID)
 
-    def encode_sent(self, sent, attach_ends=True):
+    def encode_sent(self, sent, attach_starts=True, attach_ends=True):
         if isinstance(sent, list):
             sent = ' '.join(sent)
         if self.lowercase:
             sent = sent.lower()
         tks = sent.strip().split()
         tids = [self.get_token_id(tk) for tk in tks]
+        if attach_starts:
+            tids = [Vocab.START_ID] + tids
         if attach_ends:
-            tids = [Vocab.START_ID] + tids + [Vocab.END_ID]
+            tids = tids + [Vocab.END_ID]
         return tids
 
     def decode_ids(self, tids, dettach_ends=True):
