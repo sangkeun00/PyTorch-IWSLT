@@ -315,7 +315,7 @@ class TransformerEncoder(nn.Module):
 
         # Embedding
         self.embed_scale = math.sqrt(enc_embed_dim)
-        self.embedding = nn.Embedding(len(src_dict), enc_embed_dim)
+        self.embedding = nn.Embedding(len(src_dict), enc_embed_dim, padding_idx=src_dict.PAD_ID)
         self.embed_dropout = embed_dropout
         self.positional_embedding = PositionalEmbedding(enc_embed_dim)
         self.enc_layernorm_before = enc_layernorm_before
@@ -389,7 +389,7 @@ class TransformerDecoder(nn.Module):
 
         # Embedding
         self.embed_scale = math.sqrt(dec_embed_dim)
-        self.embedding = nn.Embedding(len(tgt_dict), dec_embed_dim)
+        self.embedding = nn.Embedding(len(tgt_dict), dec_embed_dim, padding_idx=tgt_dict.PAD_ID)
         self.embed_dropout = embed_dropout
         self.positional_embedding = PositionalEmbedding(dec_embed_dim)
         self.dec_layernorm_before = dec_layernorm_before
