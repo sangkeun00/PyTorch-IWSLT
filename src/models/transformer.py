@@ -318,6 +318,7 @@ class TransformerEncoder(nn.Module):
         self.embedding = nn.Embedding(len(src_dict), enc_embed_dim)
         self.embed_dropout = embed_dropout
         self.positional_embedding = PositionalEmbedding(enc_embed_dim)
+        self.enc_layernorm_before = enc_layernorm_before
 
         # Encoder layers
         self.layers = nn.ModuleList()
@@ -334,7 +335,10 @@ class TransformerEncoder(nn.Module):
             self.layers.append(layer)
 
         # Final LayerNorm
-        self.last_layernorm = nn.LayerNorm(enc_embed_dim, eps=1e-5)
+        if self.enc_layernorm_before:
+            self.last_layernorm = nn.LayerNorm(enc_embed_dim, eps=1e-5)
+        else:
+            self.last_layernorm = None
 
         self.reset_parameters()
 
@@ -358,7 +362,8 @@ class TransformerEncoder(nn.Module):
         for layer in self.layers:
             x = layer(x, mask=src_key_padding_mask)
 
-        x = self.last_layernorm(x)
+        if self.enc_layernorm_before and self.last_layernorm is not None:
+            x = self.last_layernorm(x)
 
         return x
 
@@ -387,6 +392,7 @@ class TransformerDecoder(nn.Module):
         self.embedding = nn.Embedding(len(tgt_dict), dec_embed_dim)
         self.embed_dropout = embed_dropout
         self.positional_embedding = PositionalEmbedding(dec_embed_dim)
+        self.dec_layernorm_before = dec_layernorm_before
 
         # Decoder Layers
         self.layers = nn.ModuleList()
@@ -403,7 +409,10 @@ class TransformerDecoder(nn.Module):
             self.layers.append(layer)
 
         # Final LayerNorm
-        self.last_layernorm = nn.LayerNorm(dec_embed_dim, eps=1e-5)
+        if self.dec_layernorm_before:
+            self.last_layernorm = nn.LayerNorm(dec_embed_dim, eps=1e-5)
+        else:
+            self.last_layernorm = None
         self.out_linear = None
         if not tied_weight:
             self.out_linear = nn.Linear(dec_embed_dim, len(tgt_dict),
@@ -439,7 +448,8 @@ class TransformerDecoder(nn.Module):
         for idx, state in enumerate(new_states):
             cache_states(cache, idx, state)
 
-        x = self.last_layernorm(x)
+        if self.dec_layernorm_before and self.last_layernorm is not None:
+            x = self.last_layernorm(x)
         # [T, B, C] -> [B, T, C]
         x = x.transpose(0, 1)
 
