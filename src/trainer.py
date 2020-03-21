@@ -160,7 +160,9 @@ class Trainer(object):
             print(('nll loss: {:.3f}, ppl: {:.3f}, '
                    'best ppl: {:.3f}').format(val_loss, val_ppl, best_ppl))
 
-            self.save(self.args.save_path, epoch)
+            if (self.args.save_epochs <= 1
+                    or epoch % self.args.save_epochs == 0):
+                self.save(self.args.save_path, epoch)
             if val_ppl == best_ppl:
                 print('[*] Best model is changed!')
                 self.save(self.args.save_path, verbose=False)
@@ -358,6 +360,7 @@ def parse_args():
 
     # Logging parameters
     parser.add_argument('--save-path', type=str, default='./save/')
+    parser.add_argument('--save-epochs', type=int, default=1)
 
     return parser.parse_args()
 

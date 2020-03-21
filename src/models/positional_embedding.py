@@ -5,7 +5,7 @@ import torch.nn as nn
 
 
 class PositionalEmbedding(nn.Module):
-    def __init__(self, embed_dim, max_len=500):
+    def __init__(self, embed_dim, max_len=1026):
         super().__init__()
 
         assert embed_dim % 2 == 0
