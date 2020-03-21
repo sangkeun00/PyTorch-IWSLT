@@ -1,10 +1,11 @@
 #!/bin/bash
 # en -> de
 mkdir -p outputs
-# if [ ! -f outputs/test.en-de ]; then
+if [ -z "$1" ] || [ "$1" = "en-de" ]; then
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/en-de/model.pth \
+    --fp16 \
     --decode-method beam \
     --beam-size 5 \
     --max-decode-length-multiplier 2.0 \
@@ -32,14 +33,17 @@ mkdir -p outputs
     --attn-dropout 0.0 \
     --embed-dropout 0.3
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.en-de > outputs/test.en-de
-# fi
+fi
+if [ -f outputs/test.en-de ]; then
 echo evaluate en-de
 fairseq-score -s outputs/test.en-de -r data/iwslt-2014/test.de
+fi
 
-# if [ ! -f outputs/test.de-en ]; then
+if [ -z "$1" ] || [ "$1" = "de-en" ]; then
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/de-en/model.pth \
+    --fp16 \
     --decode-method beam \
     --beam-size 5 \
     --max-decode-length-multiplier 2.0 \
@@ -67,6 +71,8 @@ fairseq-score -s outputs/test.en-de -r data/iwslt-2014/test.de
     --attn-dropout 0.0 \
     --embed-dropout 0.3
   sed -r 's/(@@ )|(@@ ?$)//g' outputs/test.bpe.de-en > outputs/test.de-en
-# fi
+fi
+if [ -f outputs/test.de-en ]; then
 echo evaluate de-en
 fairseq-score -s outputs/test.de-en -r data/iwslt-2014/test.en
+fi

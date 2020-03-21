@@ -7,6 +7,7 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --enc-layernorm-before \
     --dec-layernorm-before \
     --label-smoothing 0.1 \
+    --fp16 \
     --lang-src en \
     --lang-tgt de \
     --save-path models/en-de \
@@ -42,6 +43,7 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --enc-layernorm-before \
     --dec-layernorm-before \
     --label-smoothing 0.1 \
+    --fp16 \
     --lang-src de \
     --lang-tgt en \
     --save-path models/de-en \
