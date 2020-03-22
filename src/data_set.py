@@ -1,5 +1,6 @@
 import os
 from collections import Counter
+import random
 
 import numpy as np
 import torch
@@ -202,7 +203,7 @@ def load_sents(path):
 
 
 class LenMatchBatchSampler(torch.utils.data.BatchSampler):
-    def __init__(self, sampler, batch_size, max_tokens=None, group_ratio=3):
+    def __init__(self, sampler, batch_size, max_tokens=None, group_ratio=4):
         super().__init__(sampler, batch_size=batch_size, drop_last=False)
         self.max_tokens = max_tokens
         self.group_ratio = group_ratio
@@ -318,12 +319,11 @@ class LenMatchBatchSampler(torch.utils.data.BatchSampler):
         batch_len = 0
         leftover = [(bk_idx, idx) for bk_idx, bucket in enumerate(buckets)
                     for idx in bucket]
+        final_batches = []
         for bk_idx, idx in leftover:
             bk_len = self._get_bk_len(bk_idx)
             if self._exploded(batch_len, bk_len):
-                yield batch
-                yielded_indices.append(batch)
-                yielded += 1
+                final_batches.append(batch)
                 batch = []
                 batch_len = 0
 
@@ -331,13 +331,15 @@ class LenMatchBatchSampler(torch.utils.data.BatchSampler):
             batch_len += bk_len
 
             if len(batch) == self.batch_size:
-                yield batch
-                yielded_indices.append(batch)
-                yielded += 1
+                final_batches.append(batch)
                 batch = []
                 batch_len = 0
 
         if len(batch) > 0 and not self.drop_last:
+            final_batches.append(batch)
+
+        random.shuffle(final_batches)
+        for batch in final_batches:
             yield batch
             yielded_indices.append(batch)
             yielded += 1
