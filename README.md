@@ -33,7 +33,7 @@ You could also directly execute the script
 Or you may customize the parameters by using the following command.
 
 ```bash
-python -m src.trainer --gpu 0 --enc-layernorm-before --dec-layernorm-before --label-smoothing 0.1
+python -m src.trainer --gpu 0 --label-smoothing 0.1
 ```
 
 With Volta GPU (e.g., 2080Ti), you can further speed up training speed by adding `--fp16` option.

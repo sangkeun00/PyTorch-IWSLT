@@ -25,8 +25,6 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --length-normalize True \
     --output-path outputs/test.bpe.en-de \
     --gpu 0 \
-    --enc-layernorm-before \
-    --dec-layernorm-before \
     --lang-src en \
     --lang-tgt de \
     --batch-size 10 \
@@ -76,8 +74,6 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --length-normalize True \
     --output-path outputs/test.bpe.de-en \
     --gpu 0 \
-    --enc-layernorm-before \
-    --dec-layernorm-before \
     --lang-src de \
     --lang-tgt en \
     --batch-size 10 \

@@ -4,8 +4,6 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
   mkdir -p models/en-de
   python -m src.trainer \
     --gpu 0 \
-    --enc-layernorm-before \
-    --dec-layernorm-before \
     --label-smoothing 0.1 \
     --lang-src en \
     --lang-tgt de \
@@ -42,8 +40,6 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
   mkdir -p models/de-en
   python -m src.trainer \
     --gpu 0 \
-    --enc-layernorm-before \
-    --dec-layernorm-before \
     --label-smoothing 0.1 \
     --lang-src de \
     --lang-tgt en \
