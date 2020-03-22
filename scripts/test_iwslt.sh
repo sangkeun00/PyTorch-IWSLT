@@ -14,7 +14,7 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     models/en-de/model52.pth \
     models/en-de/model51.pth \
     --output models/en-de/model.avg.pth
-h   
+
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/en-de/model.avg.pth \
@@ -65,6 +65,7 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     models/de-en/model52.pth \
     models/de-en/model51.pth \
     --output models/de-en/model.avg.pth
+
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/de-en/model.avg.pth \
