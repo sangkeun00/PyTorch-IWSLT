@@ -3,7 +3,6 @@ import argparse
 import time
 
 import torch
-from tqdm import tqdm
 
 from . import data_set
 from . import models
@@ -205,8 +204,9 @@ class Trainer(object):
         os.makedirs(out_dir, exist_ok=True)
         vocab_tgt = self.data_splits.vocab_tgt
         with open(path, 'w') as outfile:
-            for batch in utils.yield_to_device(
-                    tqdm(self.test_loader), self.device):
+            begin_time = time.time()
+            for idx, batch in enumerate(utils.yield_to_device(
+                    self.test_loader, self.device)):
                 src, src_lens, tgt_in, tgt_out, tgt_lens = batch
                 src_len = src_lens.max().cpu().item()
                 tgt_len = int(self.args.max_decode_length_multiplier * src_len
@@ -228,6 +228,12 @@ class Trainer(object):
                     for seq in decoded:
                         tks = vocab_tgt.decode_ids(seq, dettach_ends=True)
                         outfile.write('{}\n'.format(' '.join(tks)))
+                cur_time = time.time()
+                print(('\r[step {:4d}/{:4d}] time: {:.1f}s').format(
+                          idx + 1,
+                          len(self.test_loader),
+                          cur_time - begin_time),
+                      end='')
 
         if is_training:
             self.model.train()
