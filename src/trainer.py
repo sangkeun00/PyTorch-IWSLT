@@ -50,25 +50,7 @@ class Trainer(object):
             raise ValueError
 
         if args.fp16:
-            from apex.fp16_utils import FP16_Optimizer
-            self.model.half()
-            use_adamw = True if args.optim == 'adamw' else False
-            self.optimizer = optim.adam.Adam16(
-                params=self.model.parameters(),
-                lr=args.learning_rate,
-                betas=args.betas,
-                weight_decay=args.weight_decay,
-                adamw=use_adamw,
-                scheduler=args.decay_method,
-                min_lr=args.min_lr,
-                warmup_steps=args.warmup_steps,
-            )
-            self.optimizer = FP16_Optimizer(
-                self.optimizer,
-                static_loss_scale=1,
-                dynamic_loss_scale=True,
-                verbose=False
-            )
+            raise NotImplementedError('fp16 is disallowed!')
 
         self.scheduler = None
         if args.decay_method == 'inverse_sqrt' and not args.fp16:

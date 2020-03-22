@@ -17,13 +17,6 @@ To download and preprocess the IWSLT en-de dataset, please run the following scr
 ./scripts/data_iwslt.sh
 ```
 
-#### Half Precision (fp16) Training (Optional)
-
-By default, we use fp32 training, but we also allows fp16 for faster training.
-
-Please install [apex](https://github.com/NVIDIA/apex) from NVIDIA.
-The detailed description on its installation is provided in [https://github.com/NVIDIA/apex#quick-start](https://github.com/NVIDIA/apex#quick-start).
-
 ## Training
 
 You could also directly execute the script
@@ -35,8 +28,6 @@ Or you may customize the parameters by using the following command.
 ```bash
 python -m src.trainer --gpu 0 --label-smoothing 0.1
 ```
-
-With Volta GPU (e.g., 2080Ti), you can further speed up training speed by adding `--fp16` option.
 
 ## Testing
 
