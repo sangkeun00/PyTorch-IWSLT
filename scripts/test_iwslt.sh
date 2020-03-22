@@ -8,7 +8,7 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     models/en-de/model58.pth \
     models/en-de/model57.pth \
     models/en-de/model56.pth \
-    --output models/en-de/model.avg.pt
+    --output models/en-de/model.avg.pth
 h   
   python -m src.trainer \
     --mode test \
@@ -55,7 +55,7 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     models/de-en/model58.pth \
     models/de-en/model57.pth \
     models/de-en/model56.pth \
-    --output models/de-en/model.avg.pt
+    --output models/de-en/model.avg.pth
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/de-en/model.avg.pth \
