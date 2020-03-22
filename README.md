@@ -17,17 +17,12 @@ To download and preprocess the IWSLT en-de dataset, please run the following scr
 ./scripts/data_iwslt.sh
 ```
 
-#### Half Precision (fp16) Training
-To allow faster training, please install [apex](https://github.com/NVIDIA/apex) from NVIDIA.
+#### Half Precision (fp16) Training (Optional)
+
+By default, we use fp32 training, but we also allows fp16 for faster training.
+
+Please install [apex](https://github.com/NVIDIA/apex) from NVIDIA.
 The detailed description on its installation is provided in [https://github.com/NVIDIA/apex#quick-start](https://github.com/NVIDIA/apex#quick-start).
-
-In summary, we could use the following commands to install the package:
-
-```bash
-git clone https://github.com/NVIDIA/apex
-cd apex
-pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
-```
 
 ## Training
 ```bash
