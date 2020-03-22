@@ -29,7 +29,6 @@ dependencies:
   - pyyaml=3.12
   - cxxfilt=0.2.1
   - pip:
-    - pytorch-lightning==0.7.1
     - subword-nmt==0.3.7
     - sacrebleu==1.4.4
     - sacremoses==0.0.38

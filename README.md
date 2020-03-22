@@ -34,9 +34,6 @@ pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cud
 python -m src.trainer --gpu 0 --enc-layernorm-before --dec-layernorm-before --label-smoothing 0.1
 ```
 
-For the learning purpose, we also implemented our trainer with `pytorch-lightning`.
-If you want to test this, please replace `src.trainer` with `src.trainer_pl` of the above script. 
-
 With Volta GPU (e.g., 2080Ti), you can further speed up training speed by adding `--fp16` option.
 
 You could also directly execute the script
