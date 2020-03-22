@@ -8,6 +8,11 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     models/en-de/model58.pth \
     models/en-de/model57.pth \
     models/en-de/model56.pth \
+    models/en-de/model55.pth \
+    models/en-de/model54.pth \
+    models/en-de/model53.pth \
+    models/en-de/model52.pth \
+    models/en-de/model51.pth \
     --output models/en-de/model.avg.pth
 h   
   python -m src.trainer \
@@ -55,6 +60,11 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     models/de-en/model58.pth \
     models/de-en/model57.pth \
     models/de-en/model56.pth \
+    models/de-en/model55.pth \
+    models/de-en/model54.pth \
+    models/de-en/model53.pth \
+    models/de-en/model52.pth \
+    models/de-en/model51.pth \
     --output models/de-en/model.avg.pth
   python -m src.trainer \
     --mode test \
