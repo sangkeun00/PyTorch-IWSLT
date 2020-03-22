@@ -2,9 +2,17 @@
 # en -> de
 mkdir -p outputs
 if [ -z "$1" ] || [ "$1" = "en-de" ]; then
+  python -m src.bin.avg_models \
+    models/en-de/model60.pth \
+    models/en-de/model59.pth \
+    models/en-de/model58.pth \
+    models/en-de/model57.pth \
+    models/en-de/model56.pth \
+    --output models/en-de/model.avg.pt
+h   
   python -m src.trainer \
     --mode test \
-    --init-checkpoint models/en-de/model.pth \
+    --init-checkpoint models/en-de/model.avg.pth \
     --fp16 \
     --decode-method beam \
     --beam-size 5 \
@@ -40,9 +48,16 @@ fairseq-score -s outputs/test.en-de -r data/iwslt-2014/test.de
 fi
 
 if [ -z "$1" ] || [ "$1" = "de-en" ]; then
+  python -m src.bin.avg_models \
+    models/de-en/model60.pth \
+    models/de-en/model59.pth \
+    models/de-en/model58.pth \
+    models/de-en/model57.pth \
+    models/de-en/model56.pth \
+    --output models/de-en/model.avg.pt
   python -m src.trainer \
     --mode test \
-    --init-checkpoint models/de-en/model.pth \
+    --init-checkpoint models/de-en/model.avg.pth \
     --fp16 \
     --decode-method beam \
     --beam-size 5 \

@@ -14,11 +14,13 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --max-epochs 60 \
     --learning-rate 5e-4 \
     --optim adamw \
+    --betas 0.9 0.98 \
     --decay-method inverse_sqrt \
     --weight-decay 0.0001 \
     --min-lr 1e-9 \
-    --batch-size 80 \
-    --warmup-steps 8000 \
+    --batch-size 800 \
+    --max-tokens 4096 \
+    --warmup-steps 10000 \
     --gradient-accumulation 2 \
     --transformer-impl custom \
     --dec-embed-dim 512 \
@@ -50,11 +52,13 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --max-epochs 60 \
     --learning-rate 5e-4 \
     --optim adamw \
+    --betas 0.9 0.98 \
     --decay-method inverse_sqrt \
     --weight-decay 0.0001 \
     --min-lr 1e-9 \
-    --batch-size 80 \
-    --warmup-steps 8000 \
+    --batch-size 800 \
+    --max-tokens 4096 \
+    --warmup-steps 10000 \
     --gradient-accumulation 2 \
     --transformer-impl custom \
     --dec-embed-dim 512 \
