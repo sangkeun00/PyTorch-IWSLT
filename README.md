@@ -25,20 +25,29 @@ Please install [apex](https://github.com/NVIDIA/apex) from NVIDIA.
 The detailed description on its installation is provided in [https://github.com/NVIDIA/apex#quick-start](https://github.com/NVIDIA/apex#quick-start).
 
 ## Training
+
+You could also directly execute the script
+```bash
+./scripts/train_iwslt.sh
+```
+Or you may customize the parameters by using the following command.
+
 ```bash
 python -m src.trainer --gpu 0 --enc-layernorm-before --dec-layernorm-before --label-smoothing 0.1
 ```
 
 With Volta GPU (e.g., 2080Ti), you can further speed up training speed by adding `--fp16` option.
 
-You could also directly execute the script
-```bash
-./scripts/train_iwslt.sh
-```
-
 ## Testing
 
-Use test mode to generate target sentences based on the trained model.
+You could also directly execute the script to automatically run evaluation.
+
+```bash
+./scripts/test_iwslt.sh
+```
+
+Or you could test mode to generate target sentences based on the trained model.
+
 ```bash
 python -m src.trainer \
     --mode test \
@@ -49,14 +58,8 @@ python -m src.trainer \
     --output-path [decode_output]
 ```
 
-Once the output is generated, use the following command to remove BPE, and then BLEU can be computed against the ground truth using standard evaluation scripts.
+Once the output is generated, use the following command to remove BPE, and then BLEU can be computed against the ground truth using standard evaluation tools such as fairseq-score.
 
 ```bash
 sed -r 's/(@@ )|(@@ ?$)//g' [decode_output] > [no_bpe_output]
-```
-
-
-Or you could also directly execute the script to automatically run the above steps.
-```bash
-./scripts/test_iwslt.sh
 ```
