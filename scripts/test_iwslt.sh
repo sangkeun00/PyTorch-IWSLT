@@ -26,6 +26,7 @@ h
     --lang-src en \
     --lang-tgt de \
     --batch-size 10 \
+    --eval-batch-size 10 \
     --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \
@@ -71,6 +72,7 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --lang-src de \
     --lang-tgt en \
     --batch-size 10 \
+    --eval-batch-size 10 \
     --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \

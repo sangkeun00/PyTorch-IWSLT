@@ -87,12 +87,12 @@ class Trainer(object):
         )
         self.val_loader = data_set.get_dataloader(
             dset=data_splits['val'],
-            batch_size=args.batch_size,
+            batch_size=args.eval_batch_size,
             pin_memory=not self.cpu_only
         )
         self.test_loader = data_set.get_dataloader(
             dset=data_splits['tst'],
-            batch_size=args.batch_size,
+            batch_size=args.eval_batch_size,
             shuffle=False,
             pin_memory=not self.cpu_only
         )
@@ -321,6 +321,7 @@ def parse_args():
     parser.add_argument('--min-lr', type=float, default=1e-9)
     parser.add_argument('--warmup-steps', type=int, default=8000)
     parser.add_argument('--batch-size', type=int, default=80)
+    parser.add_argument('--eval-batch-size', type=int, default=20)
     parser.add_argument('--max-tokens', type=int, default=4096)
     parser.add_argument('--label-smoothing', type=float, default=0.)
     parser.add_argument('--gradient-accumulation', type=int, default=2)
