@@ -14,8 +14,8 @@ class SplittedDataset(object):
                  lang_src='en',
                  lang_tgt='de',
                  path_format='{split}.bpe.{lang}',
-                 attach_ends=True):
-        self.attach_ends = attach_ends
+                 source_attach_ends=True):
+        self.source_attach_ends = source_attach_ends
 
         trn_src_path = os.path.join(
             input_dir, path_format.format(split='train', lang=lang_src))
@@ -52,19 +52,19 @@ class SplittedDataset(object):
                           trn_tgt_path,
                           vocab_src=self.vocab_src,
                           vocab_tgt=self.vocab_tgt,
-                          attach_ends=attach_ends),
+                          source_attach_ends=source_attach_ends),
             'val':
             SingleDataset(val_src_path,
                           val_tgt_path,
                           vocab_src=self.vocab_src,
                           vocab_tgt=self.vocab_tgt,
-                          attach_ends=attach_ends),
+                          source_attach_ends=source_attach_ends),
             'tst':
             SingleDataset(tst_src_path,
                           tst_tgt_path,
                           vocab_src=self.vocab_src,
                           vocab_tgt=self.vocab_tgt,
-                          attach_ends=attach_ends),
+                          source_attach_ends=source_attach_ends),
         }
 
     def __getitem__(self, key):
