@@ -239,7 +239,9 @@ class Trainer(object):
         else:
             save_path = os.path.join(path, 'model.pth')
 
-        self.model.float()  # Convert model to fp32
+        # Convert model to fp32 if using mixed precision
+        if self.args.fp16:
+            self.model.float()
         torch.save(self.model.state_dict(), save_path)
 
         if self.args.fp16:
@@ -249,7 +251,8 @@ class Trainer(object):
             print('[*] Model is saved in \'{}\'.'.format(save_path))
 
     def load(self, path):
-        self.model.float()
+        if self.args.fp16:
+            self.model.float()
         self.model.load_state_dict(torch.load(path, map_location=self.device))
 
         if self.args.fp16:
