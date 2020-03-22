@@ -7,7 +7,6 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --enc-layernorm-before \
     --dec-layernorm-before \
     --label-smoothing 0.1 \
-    --fp16 \
     --lang-src en \
     --lang-tgt de \
     --save-path models/en-de \
@@ -40,12 +39,12 @@ fi
 
 # de -> en
 if [ -z "$1" ] || [ "$1" = "de-en" ]; then
+  mkdir -p models/de-en
   python -m src.trainer \
     --gpu 0 \
     --enc-layernorm-before \
     --dec-layernorm-before \
     --label-smoothing 0.1 \
-    --fp16 \
     --lang-src de \
     --lang-tgt en \
     --save-path models/de-en \

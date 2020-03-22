@@ -18,7 +18,6 @@ h
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/en-de/model.avg.pth \
-    --fp16 \
     --decode-method beam \
     --beam-size 5 \
     --max-decode-length-multiplier 2.0 \
@@ -69,7 +68,6 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
   python -m src.trainer \
     --mode test \
     --init-checkpoint models/de-en/model.avg.pth \
-    --fp16 \
     --decode-method beam \
     --beam-size 5 \
     --max-decode-length-multiplier 2.0 \
