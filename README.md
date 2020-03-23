@@ -37,7 +37,7 @@ You could also directly execute the script to automatically run evaluation.
 ./scripts/test_iwslt.sh
 ```
 
-Or you could test mode to generate target sentences based on the trained model.
+Or you could use test mode to generate target sentences based on the trained model.
 
 ```bash
 python -m src.trainer \
