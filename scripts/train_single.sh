@@ -19,7 +19,6 @@ python -m src.trainer \
   --batch-size 80 \
   --warmup-steps 100 \
   --gradient-accumulation 2 \
-  --transformer-impl custom \
   --dec-embed-dim 512 \
   --dec-ffn-dim 1024 \
   --dec-num-heads 4 \

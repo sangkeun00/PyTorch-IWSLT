@@ -12,7 +12,6 @@ python -m src.trainer \
   --lang-src en \
   --lang-tgt de \
   --batch-size 1 \
-  --transformer-impl custom \
   --dec-embed-dim 512 \
   --dec-ffn-dim 1024 \
   --dec-num-heads 4 \

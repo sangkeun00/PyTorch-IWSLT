@@ -19,7 +19,6 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --max-tokens 4096 \
     --warmup-steps 10000 \
     --gradient-accumulation 2 \
-    --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \
     --dec-num-heads 4 \
@@ -55,7 +54,6 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --max-tokens 4096 \
     --warmup-steps 10000 \
     --gradient-accumulation 2 \
-    --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \
     --dec-num-heads 4 \
