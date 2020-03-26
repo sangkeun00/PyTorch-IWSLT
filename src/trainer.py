@@ -114,7 +114,7 @@ class Trainer(object):
                 cum_tokens += cur_tokens
                 avg_loss = cum_loss / cum_tokens
                 avg_nll = cum_nll / cum_tokens
-                avg_ppl = 2 ** avg_nll
+                avg_ppl = 2**avg_nll
                 cur_time = time.time()
                 print(('\r[step {:4d}/{}] loss: {:.3f}, '
                        'nll loss: {:.3f}, ppl: {:.3f}, time: {:.1f}s').format(
@@ -165,7 +165,7 @@ class Trainer(object):
             cum_tokens += cur_tokens
 
         nll_loss = cum_loss / cum_tokens
-        ppl = 2 ** nll_loss
+        ppl = 2**nll_loss
 
         if is_training:
             self.model.train()
@@ -180,23 +180,22 @@ class Trainer(object):
         vocab_tgt = self.data_splits.vocab_tgt
         with open(path, 'w') as outfile:
             begin_time = time.time()
-            for idx, batch in enumerate(utils.yield_to_device(
-                    self.test_loader, self.device)):
+            for idx, batch in enumerate(
+                    utils.yield_to_device(self.test_loader, self.device)):
                 src, src_lens, tgt_in, tgt_out, tgt_lens = batch
                 src_len = src_lens.max().cpu().item()
-                tgt_len = int(self.args.max_decode_length_multiplier * src_len
-                              + self.args.max_decode_length_base)
+                tgt_len = int(self.args.max_decode_length_multiplier *
+                              src_len + self.args.max_decode_length_base)
                 with torch.no_grad():
                     if self.args.decode_method == 'greedy':
-                        decoded = self.model.greedy_decode(
-                                src,
-                                max_length=tgt_len)
+                        decoded = self.model.greedy_decode(src,
+                                                           max_length=tgt_len)
                     elif self.args.decode_method == 'beam':
                         decoded = self.model.beam_decode(
-                                src,
-                                beam_size=self.args.beam_size,
-                                length_normalize=self.args.length_normalize,
-                                max_length=tgt_len)
+                            src,
+                            beam_size=self.args.beam_size,
+                            length_normalize=self.args.length_normalize,
+                            max_length=tgt_len)
                     else:
                         raise NotImplementedError()
                     decoded = decoded.cpu().numpy()
@@ -258,14 +257,17 @@ def main():
     # initialize trainer
     trainer = Trainer(args, data_splits, device)
     if args.init_checkpoint:
-        trainer.load(args.init_checkpoint)
+        trainer.load(args.init_checkpoint[0])
     if args.mode == 'train':
         trainer.train()
     elif args.mode == 'val':
-        val_nll, val_ppl = trainer.validation(dl=trainer.val_loader)
-        tst_nll, tst_ppl = trainer.validation(dl=trainer.test_loader)
-        print('VAL NLL=', val_nll, 'VAL_PPL=', val_ppl)
-        print('TEST NLL=', tst_nll, 'TEST_PPL=', tst_ppl)
+        print('path\tval_nll\tval_ppl\ttst_nll\ttst_ppl')
+        for path in args.init_checkpoint:
+            trainer.load(path)
+            val_nll, val_ppl = trainer.validation(dl=trainer.val_loader)
+            tst_nll, tst_ppl = trainer.validation(dl=trainer.test_loader)
+            print('{}\t{}\t{}\t{}\t{}'.format(path, val_nll, val_ppl, tst_nll,
+                                              tst_ppl))
     elif args.mode == 'test':
         assert args.output_path
         assert args.init_checkpoint
@@ -277,7 +279,9 @@ def main():
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment parameters
-    parser.add_argument('--mode', choices=('train', 'test', 'val'), default='train')
+    parser.add_argument('--mode',
+                        choices=('train', 'test', 'val'),
+                        default='train')
     parser.add_argument('--fp16', action='store_true', help='Use fp16')
     parser.add_argument('--gpu', type=int, default=0)
 
@@ -308,7 +312,7 @@ def parse_args():
     parser.add_argument('--gradient-accumulation', type=int, default=2)
 
     # testing parameters
-    parser.add_argument('--init-checkpoint')
+    parser.add_argument('--init-checkpoint', nargs='+')
     parser.add_argument('--output-path')
     parser.add_argument('--beam-size', type=int, default=4)
     parser.add_argument('--decode-method',
@@ -317,9 +321,7 @@ def parse_args():
     parser.add_argument('--max-decode-length-multiplier',
                         type=float,
                         default=2)
-    parser.add_argument('--max-decode-length-base',
-                        type=int,
-                        default=10)
+    parser.add_argument('--max-decode-length-base', type=int, default=10)
     parser.add_argument('--length-normalize', type=bool, default=True)
 
     # model parameters
