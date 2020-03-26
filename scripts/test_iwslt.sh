@@ -29,7 +29,6 @@ if [ -z "$1" ] || [ "$1" = "en-de" ]; then
     --lang-tgt de \
     --batch-size 10 \
     --eval-batch-size 10 \
-    --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \
     --dec-num-heads 4 \
@@ -78,7 +77,6 @@ if [ -z "$1" ] || [ "$1" = "de-en" ]; then
     --lang-tgt en \
     --batch-size 10 \
     --eval-batch-size 10 \
-    --transformer-impl custom \
     --dec-embed-dim 512 \
     --dec-ffn-dim 1024 \
     --dec-num-heads 4 \
