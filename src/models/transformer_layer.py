@@ -59,18 +59,6 @@ class EncoderLayer(nn.Module):
         if not self.layernorm_before:
             x = self.attn_layernorm(x)
 
-        # point-wise ffn part
-        identity = x
-        if self.layernorm_before:
-            x = self.ffn_layernorm(x)
-        x = F.relu(self.ffn1(x))
-        x = F.dropout(x, p=self.act_dropout, training=self.training)
-        x = self.ffn2(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = x + identity
-        if not self.layernorm_before:
-            x = self.ffn_layernorm(x)
-
         return x
 
 
@@ -163,17 +151,5 @@ class DecoderLayer(nn.Module):
         x = x + identity
         if not self.layernorm_before:
             x = self.enc_dec_layernorm(x)
-
-        # point-wise ffn part
-        identity = x
-        if self.layernorm_before:
-            x = self.ffn_layernorm(x)
-        x = F.relu(self.ffn1(x))
-        x = F.dropout(x, p=self.act_dropout, training=self.training)
-        x = self.ffn2(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        x = x + identity
-        if not self.layernorm_before:
-            x = self.ffn_layernorm(x)
 
         return x
