@@ -5,7 +5,6 @@ import torch
 
 from ..optim.lr_scheduler import InverseSqrtScheduler
 from ..models import transformer
-from ..models import easy_transformer
 from .. import losses
 from .. import data_set
 
@@ -31,10 +30,6 @@ class TransformerTest(unittest.TestCase):
                               embed_dropout=0.,
                               dec_tied_weight=False)
         self.model = transformer.Transformer(
-            self.args,
-            src_dict=self.data_splits.vocab_src,
-            tgt_dict=self.data_splits.vocab_tgt)
-        self.easy_model = easy_transformer.EasyTransformer(
             self.args,
             src_dict=self.data_splits.vocab_src,
             tgt_dict=self.data_splits.vocab_tgt)
@@ -182,12 +177,6 @@ class TransformerTest(unittest.TestCase):
                         outputs[i][j].item(), tgt_outputs[i][j].item(),
                         '(%d, %d) equal %d = %d' %
                         (i, j, outputs[i][j].item(), tgt_outputs[i][j].item()))
-
-    def test_easy_runnable(self):
-        self.runnable_check(self.easy_model)
-
-    def test_easy_can_converge(self):
-        self.converge_check(self.easy_model)
 
 
 if __name__ == '__main__':

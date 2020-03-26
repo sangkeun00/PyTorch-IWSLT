@@ -19,18 +19,11 @@ class Trainer(object):
         self.device = device
         self.cpu_only = (device == torch.device('cpu'))
 
-        if args.transformer_impl == 'pytorch':
-            self.model = models.easy_transformer.EasyTransformer(
-                args=args,
-                src_dict=data_splits.vocab_src,
-                tgt_dict=data_splits.vocab_tgt,
-            ).to(device)
-        elif args.transformer_impl == 'custom':
-            self.model = models.transformer.Transformer(
-                args=args,
-                src_dict=data_splits.vocab_src,
-                tgt_dict=data_splits.vocab_tgt,
-            ).to(device)
+        self.model = models.transformer.Transformer(
+            args=args,
+            src_dict=data_splits.vocab_src,
+            tgt_dict=data_splits.vocab_tgt,
+        ).to(device)
 
         if args.optim == 'adam':
             self.optimizer = torch.optim.Adam(
@@ -330,9 +323,6 @@ def parse_args():
     parser.add_argument('--length-normalize', type=bool, default=True)
 
     # model parameters
-    parser.add_argument('--transformer-impl',
-                        choices=('custom', 'pytorch'),
-                        default='custom')
     parser.add_argument('--dec-embed-dim', type=int, default=512)
     parser.add_argument('--dec-ffn-dim', type=int, default=1024)
     parser.add_argument('--dec-num-heads', type=int, default=4)
