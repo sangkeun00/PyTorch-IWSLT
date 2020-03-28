@@ -15,14 +15,16 @@ def main():
     args = parse_args()
     with open(args.ref) as infile, open(args.sys) as wefile:
         outputs = []
-        for inline, weline in zip(infile, wefile):
+        for idx, (inline, weline) in enumerate(zip(infile, wefile), start=1):
             bleu = sacrebleu.sentence_bleu(weline, inline)
             print(bleu)
-            outputs.append((bleu.score, inline.strip(), weline.strip()))
-        outputs.sort(key=lambda x: -x[0])
+            outputs.append((idx, bleu.score, inline.strip(), weline.strip()))
+        outputs.sort(key=lambda x: -x[1])
         with open(args.out, 'w') as outfile:
-            for bleu, inline, weline in outputs:
-                print('{}\t{}\t{}'.format(bleu, inline, weline), file=outfile)
+            print('line_no\tbleu\tref\tsys', file=outfile)
+            for idx, bleu, inline, weline in outputs:
+                print('{}\t{}\t{}\t{}'.format(idx, bleu, inline, weline),
+                      file=outfile)
 
 
 if __name__ == '__main__':
